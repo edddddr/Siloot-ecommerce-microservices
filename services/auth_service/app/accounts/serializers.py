@@ -12,4 +12,3 @@ class RegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
     
 
-# File: services/auth_service/app/accounts/tests.py

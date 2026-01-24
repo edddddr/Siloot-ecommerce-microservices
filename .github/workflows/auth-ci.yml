@@ -52,7 +52,7 @@ jobs:
           pip install -r requirements/base.txt
 
       - name: Run migrations
-        working-directory: services/auth_service
+        working-directory: services/auth_service/app
         run: |
           python manage.py makemigrations
           python manage.py migrate
