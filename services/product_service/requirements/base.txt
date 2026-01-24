@@ -1,8 +1,8 @@
-Django==6.0.1
-djangorestframework==3.16.1
-django-filter==25.2
-django-mptt==0.18.0
-django-taggit==6.1.0
-psycopg2-binary==2.9.11
-python-dotenv==1.2.1
-gunicorn==24.1.1
+Django
+djangorestframework
+django-filter
+django-mptt
+django-taggit
+psycopg2-binary
+python-dotenv
+gunicorn

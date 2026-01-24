@@ -1,2 +1,8 @@
-psycopg2-binary
+django 
+djangorestframework 
+django-filter 
+django-mptt 
+django-taggit 
+psycopg2-binary 
 python-dotenv
+gunicorn

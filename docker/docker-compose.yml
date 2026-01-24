@@ -73,14 +73,13 @@
 # volumes:
 #   auth_postgres_data:
 
-version: "3.9"
+# version: "3.9"
 
 services:
   auth_service:
     build:
       context: ../services/auth_service
-      working_dir: /app/app
-      working_dir: /app/app
+    working_dir: /app/app
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ../services/auth_service:/app
@@ -103,7 +102,7 @@ services:
   product_service:
     build:
       context: ../services/product_service
-      working_dir: /app/app
+    working_dir: /app/app
     command: python manage.py runserver 0.0.0.0:8001
     volumes:
       - ../services/product_service:/app
@@ -123,6 +122,54 @@ services:
     volumes:
       - product_postgres_data:/var/lib/postgresql/data
 
+  cart_service:
+    build:
+      context: ../services/cart_service
+    working_dir: /app/app
+    command: python manage.py runserver 0.0.0.0:8002
+    volumes:
+      - ../services/cart_service:/app
+    ports:
+      - "8002:8002"
+    env_file:
+      - ../services/cart_service/.env
+    depends_on:
+      - cart_db
+
+  cart_db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: cart_db
+      POSTGRES_USER: cart_user
+      POSTGRES_PASSWORD: cart_password
+    volumes:
+      - cart_postgres_data:/var/lib/postgresql/data
+      
+  order_service:
+    build:
+      context: ../services/order_service
+    working_dir: /app/app
+    command: python manage.py runserver 0.0.0.0:8003
+    volumes:
+      - ../services/order_service:/app
+    ports:
+      - "8003:8003"
+    env_file:
+      - ../services/order_service/.env
+    depends_on:
+      - order_db
+
+  order_db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_password
+    volumes:
+      - order_postgres_data:/var/lib/postgresql/data
+
 volumes:
   auth_postgres_data:
   product_postgres_data:
+  cart_postgres_data:
+  order_postgres_data:
