@@ -58,6 +58,6 @@ jobs:
           python manage.py migrate
 
       - name: Run tests
-        working-directory: services/auth_service
+        working-directory: services/auth_service/app
         run: |
           python manage.py test

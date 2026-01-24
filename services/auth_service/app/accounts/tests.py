@@ -9,3 +9,6 @@ class AuthSmokeTest(APITestCase):
             {"email": "test@example.com", "password": "test12345"},
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+    # def test_login_user(self):
