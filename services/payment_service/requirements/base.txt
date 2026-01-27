@@ -2,6 +2,6 @@ Django==5.2
 djangorestframework
 djangorestframework-simplejwt
 psycopg2-binary
-django-cors-headers
+requests
 python-dotenv
 gunicorn
