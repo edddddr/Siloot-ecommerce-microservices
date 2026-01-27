@@ -26,8 +26,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-
-        return Category.objects.filter(is_active=True)
+        return Category.objects.all()
     
     def perform_create(self, serializer):
         print(f"DEBUG: Category fields are: {[f.name for f in Category._meta.get_fields()]}")
