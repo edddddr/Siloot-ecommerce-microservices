@@ -4,6 +4,7 @@ from taggit.managers import TaggableManager
 
 class Category(MPTTModel):
     name = models.CharField(max_length=100)
+    created_by_id = models.IntegerField()
     parent = TreeForeignKey(
         "self",
         on_delete=models.CASCADE,
@@ -23,6 +24,7 @@ class Product(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    created_by_id = models.IntegerField()
     category = TreeForeignKey(
         Category,
         on_delete=models.PROTECT,

@@ -177,9 +177,9 @@
 version: "3.9"
 
 services:
-  auth_service:
+  auth-service:
     build: ../services/auth_service
-    container_name: auth_service
+    container_name: auth-service
     working_dir: /app/app
     environment:
       - PYTHONPATH=/app/app:/app/shared
@@ -285,7 +285,7 @@ services:
 
 volumes:
   auth_data:
-  # product_data:
+  product_data:
   # cart_data:
   # order_data:
   # payment_data:
