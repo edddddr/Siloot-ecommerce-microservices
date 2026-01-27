@@ -17,7 +17,9 @@ DEBUG = os.getenv("DJANGO_DEBUG") == "True"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h]
+print(f"DEBUG: Current ALLOWED_HOSTS is: {ALLOWED_HOSTS}")
 
 
 # Application definition
@@ -104,10 +106,17 @@ MIDDLEWARE.insert(0, "corsheaders.middleware.CorsMiddleware")
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# REST Framework Configuration
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",  # enforce JWT globally
+    ),
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ]
 }
 
 
