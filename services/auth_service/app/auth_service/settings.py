@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -7,7 +8,11 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+STATIC_URL = '/static/'
 
+# 2. The physical folder where Django will gather ALL files
+# This folder will be created automatically by the next step
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -31,10 +36,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    "rest_framework",
+    "corsheaders",
+    "drf_yasg",
+
+
     'accounts',
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -97,10 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-INSTALLED_APPS += [
-    "rest_framework",
-    "corsheaders",
-]
+
 
 MIDDLEWARE.insert(0, "corsheaders.middleware.CorsMiddleware")
 
@@ -111,12 +120,20 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",  # enforce JWT globally
-    ),
-    "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
-    ]
+    # "DEFAULT_PERMISSION_CLASSES": (
+    #     "rest_framework.permissions.IsAuthenticated",  # enforce JWT globally
+    # ),
+    # "DEFAULT_FILTER_BACKENDS": [
+    #     "django_filters.rest_framework.DjangoFilterBackend",
+    # ]
+}
+
+# from rest_framework_simplejwt.settings import api_settings
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 
@@ -135,5 +152,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+
 AUTH_USER_MODEL = "accounts.User"
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,  # <--- This specifically stops the login screen redirect
+    'JSON_EDITOR': True,
+}
