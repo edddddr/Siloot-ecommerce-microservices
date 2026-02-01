@@ -8,6 +8,9 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+JWT_PRIVATE_KEY = (BASE_DIR / "keys/jwt_private.pem").read_text()
+JWT_PUBLIC_KEY = (BASE_DIR / "keys/jwt_public.pem").read_text()
+
 STATIC_URL = '/static/'
 
 # 2. The physical folder where Django will gather ALL files
@@ -131,8 +134,13 @@ REST_FRAMEWORK = {
 # from rest_framework_simplejwt.settings import api_settings
 
 SIMPLE_JWT = {
+    "ALGORITHM": "RS256",
+    "SIGNING_KEY": JWT_PRIVATE_KEY,
+    "VERIFYING_KEY": JWT_PUBLIC_KEY,
+    
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
