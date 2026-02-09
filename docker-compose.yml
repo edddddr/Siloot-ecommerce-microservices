@@ -27,6 +27,32 @@ services:
     ports:
       - "5433:5432"
 
+  product-service:
+      build: ./services/product
+      container_name: product_service
+      command: python manage.py runserver 0.0.0.0:8000
+      volumes:
+        - ./services/product:/app
+      ports:
+        - "8002:8000"
+      env_file:
+        - ./services/product/.env
+      depends_on:
+        - product-db
+
+  product-db:
+    image: postgres:15
+    container_name: product_db
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_pass
+    volumes:
+      - product_db_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+
 volumes:
   auth_db_data:
-    
+  product_db_data:
+
