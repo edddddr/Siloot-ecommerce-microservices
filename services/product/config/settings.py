@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -29,6 +30,7 @@ INSTALLED_APPS = [
 
     "rest_framework",
     "django_filters",
+    "catalog",
 ]
 
 MIDDLEWARE = [
@@ -94,6 +96,22 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+SIMPLE_JWT = {
+    "SIGNING_KEY": 'django-insecure-g3wxv&h1+meqjt__fvlty##yfh59hw*v)*6sb&b-@=(-nzsxv$',  # <-- must match Auth Service SECRET_KEY
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+         "catalog.authentication.JWTAuthWithRole",
+    ),
+}
+
+
 
 
 # Internationalization
