@@ -52,7 +52,34 @@ services:
     ports:
       - "5434:5432"
 
+  order-service:
+    build: ./services/order
+    container_name: order_service
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./services/order:/app
+    ports:
+      - "8003:8000"
+    env_file:
+      - ./services/order/.env
+    depends_on:
+      - order-db
+      - product-service  # optional if calling product API
+
+  order-db:
+    image: postgres:15
+    container_name: order_db
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_pass
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+
 volumes:
   auth_db_data:
   product_db_data:
+  order_db_data:
 

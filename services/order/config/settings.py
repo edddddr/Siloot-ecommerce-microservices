@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -94,6 +95,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
+SIMPLE_JWT = {
+    "SIGNING_KEY": 'django-insecure-g3wxv&h1+meqjt__fvlty##yfh59hw*v)*6sb&b-@=(-nzsxv$',
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "orders.authentication.JWTAuthWithRole",
+    ),
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
