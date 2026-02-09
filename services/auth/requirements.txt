@@ -1,0 +1,5 @@
+Django>=3.11
+djangorestframework
+djangorestframework-simplejwt
+psycopg2-binary
+python-dotenv
