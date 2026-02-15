@@ -1,6 +1,16 @@
 version: "3.9"
 
 services:
+  gateway:
+    build: ./gateway
+    container_name: api_gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth-service
+      - product-service
+      - order-service
+      - payment-service  
 
   auth-service:
     build: ./services/auth
@@ -78,8 +88,35 @@ services:
     ports:
       - "5435:5432"
 
+  payment-service:
+    build: ./services/payment
+    container_name: payment_service
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./services/payment:/app
+    ports:
+      - "8004:8000"
+    env_file:
+      - ./services/payment/.env
+    depends_on:
+      - payment-db
+      - order-service
+
+  payment-db:
+    image: postgres:15
+    container_name: payment_db
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: payment_pass
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"  
+
 volumes:
   auth_db_data:
   product_db_data:
   order_db_data:
+  payment_db_data:
 
