@@ -49,6 +49,7 @@ services:
         - ./services/product/.env
       depends_on:
         - product-db
+        - redis
 
   product-db:
     image: postgres:15
@@ -113,6 +114,12 @@ services:
       - payment_db_data:/var/lib/postgresql/data
     ports:
       - "5436:5432"  
+  
+  redis:
+    image: redis:7
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
 
 volumes:
   auth_db_data:
