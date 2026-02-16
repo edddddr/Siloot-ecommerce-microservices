@@ -18,8 +18,8 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./services/auth:/app
-    ports:
-      - "8001:8000"
+    expose:
+      - "8000"
     env_file:
       - ./services/auth/.env
     depends_on:
@@ -43,8 +43,8 @@ services:
       command: python manage.py runserver 0.0.0.0:8000
       volumes:
         - ./services/product:/app
-      ports:
-        - "8002:8000"
+      expose:
+        - "8000"
       env_file:
         - ./services/product/.env
       depends_on:
@@ -69,8 +69,8 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./services/order:/app
-    ports:
-      - "8003:8000"
+    expose:
+      - "8000"
     env_file:
       - ./services/order/.env
     depends_on:
@@ -95,8 +95,8 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./services/payment:/app
-    ports:
-      - "8004:8000"
+    expose:
+      - "8000"
     env_file:
       - ./services/payment/.env
     depends_on:
@@ -120,6 +120,18 @@ services:
     container_name: redis_cache
     ports:
       - "6379:6379"
+  
+  
+    
+  celery-worker:
+    build: ./services/payment
+    container_name: payment_celery_worker
+    command: celery -A config worker -l info
+    env_file:
+      - ./services/payment/.env
+    depends_on:
+      - payment-service
+      - redis
 
 volumes:
   auth_db_data:

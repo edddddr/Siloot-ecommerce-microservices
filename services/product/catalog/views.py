@@ -30,17 +30,11 @@ class ProductViewSet(viewsets.ModelViewSet):
         print(f"DEBUG: Looking for Key: {cache_key}")
         data = cache.get(cache_key)
 
-        if data:
-            print(" - -- -- --   -CACHE HIT -- -- -- -")
-        else:
-            print("- - - - - CACHE MISS - -- - -")
-
         if not data:
             queryset = self.filter_queryset(self.get_queryset())
             serializer = self.get_serializer(queryset, many=True)
             data = serializer.data
             cache.set(cache_key, data, timeout=60 * 5)
-        
         
 
         return Response(data)
