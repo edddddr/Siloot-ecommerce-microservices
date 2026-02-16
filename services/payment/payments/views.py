@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
+from .tasks import process_payment_task
+
 from .models import Payment
 from .serializers import PaymentSerializer
 
@@ -32,23 +34,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
         if payment.status != "pending":
             raise ValidationError("Payment already processed.")
 
-        # simulate success
-        payment.status = "successful"
-        payment.transaction_id = str(uuid.uuid4())
-        payment.save()
+        process_paymgitent_task.delay(payment.id, request.headers.get("Authorization"))
 
-        # 🔥 CALL ORDER SERVICE (internal)
-        try:
-            response = requests.patch(
-                f"{settings.ORDER_SERVICE_URL}{payment.order_id}/update_status/",
-                json={"status": "processing"},
-                timeout=5,
-            )
-
-            print("ORDER SERVICE STATUS:", response.status_code)
-            print("ORDER SERVICE RESPONSE:", response.text)
-
-        except Exception as e:
-            print("ERROR CALLING ORDER SERVICE:", str(e))
-
-        return Response({"message": "Payment successful"})
+        return Response({"message": "Payment is being processed"})
