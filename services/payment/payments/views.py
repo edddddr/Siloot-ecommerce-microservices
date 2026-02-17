@@ -25,7 +25,17 @@ class PaymentViewSet(viewsets.ModelViewSet):
         return Payment.objects.filter(user_id=user.id)
 
     def perform_create(self, serializer):
-        serializer.save(user_id=self.request.user.id)
+        idempotency_key = self.request.headers.get("Idempotency-Key")
+
+        if idempotency_key:
+            existing = Payment.objects.filter(idempotency_key=idempotency_key).first()
+            if existing:
+                raise ValidationError("Duplicate request detected.")
+
+        serializer.save(
+            user_id=self.request.user.id,
+            idempotency_key=idempotency_key
+        )
 
     @action(detail=True, methods=["post"])
     def process(self, request, pk=None):
