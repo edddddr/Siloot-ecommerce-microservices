@@ -11,6 +11,8 @@ from .tasks import process_payment_task
 
 from .models import Payment
 from .serializers import PaymentSerializer
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
@@ -36,6 +38,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
             user_id=self.request.user.id,
             idempotency_key=idempotency_key
         )
+    
+    
 
     @action(detail=True, methods=["post"])
     def process(self, request, pk=None):
@@ -43,7 +47,26 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
         if payment.status != "pending":
             raise ValidationError("Payment already processed.")
-
-        process_paymgitent_task.delay(payment.id, request.headers.get("Authorization"))
+        
+        process_payment_task.delay(payment.id, request.headers.get("Authorization"))
 
         return Response({"message": "Payment is being processed"})
+    
+
+    
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def payment_webhook(request):
+    payment_id = request.data.get("payment_id")
+    status = request.data.get("status")
+
+    try:
+        payment = Payment.objects.get(id=payment_id)
+
+        if payment.status != "successful":
+            payment.status = status
+            payment.save()
+
+        return Response({"message": "Webhook processed"})
+    except Payment.DoesNotExist:
+        return Response({"error": "Payment not found"}, status=404)
