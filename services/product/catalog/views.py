@@ -8,6 +8,14 @@ from .models import Product, Category
 from .serializers import ProductSerializer, CategorySerializer
 from .permissions import IsAdminOrSeller
 
+
+from rest_framework.decorators import action
+from .services import get_user_orders
+from .ai.recomender import recommend_for_user
+
+
+
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -53,3 +61,20 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.delete()
         self.clear_product_cache()
+
+
+
+    @action(detail=False, methods=["get"])
+    def recommendations(self, request):
+        user = request.user
+
+        orders = get_user_orders(user.id, request.headers.get("Authorization"))
+        purchased_ids = [order["product_id"] for order in orders]
+
+        recommended_ids = recommend_for_user(purchased_ids)
+
+        products = self.queryset.filter(id__in=recommended_ids)
+
+        serializer = self.get_serializer(products, many=True)
+        return Response(serializer.data)
+
