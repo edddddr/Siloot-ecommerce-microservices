@@ -1,27 +1,20 @@
-import time
-import uuid
 import requests
 from celery import shared_task
 from django.conf import settings
 from .models import Payment
 
 
-@shared_task
-def process_payment_task(payment_id, auth_header):
-    time.sleep(5)  # simulate provider delay
-
-    payment = Payment.objects.get(id=payment_id)
-
-    payment.status = "successful"
-    payment.transaction_id = str(uuid.uuid4())
-    payment.save()
-
-    # Update order service
+@shared_task(bind=True, max_retries=3)
+def update_order_status_task(self, payment_id):
     try:
+        payment = Payment.objects.get(id=payment_id)
+
         requests.patch(
             f"{settings.ORDER_SERVICE_URL}{payment.order_id}/",
             json={"status": "processing"},
-            headers={"Authorization": auth_header},
+            timeout=5,
         )
-    except Exception:
-        pass
+
+    except Exception as exc:
+        # Retry if order service is temporarily down
+        raise self.retry(exc=exc, countdown=5)

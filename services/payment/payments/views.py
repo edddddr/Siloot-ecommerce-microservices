@@ -1,19 +1,18 @@
-import requests
-import uuid
-
 from django.conf import settings
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
-from .tasks import process_payment_task
+from .tasks import update_order_status_task
+import stripe
 
 from .models import Payment
 from .serializers import PaymentSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
@@ -47,26 +46,59 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
         if payment.status != "pending":
             raise ValidationError("Payment already processed.")
-        
-        process_payment_task.delay(payment.id, request.headers.get("Authorization"))
 
-        return Response({"message": "Payment is being processed"})
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": payment.currency.lower(),
+                    "product_data": {
+                        "name": f"Order {payment.order_id}",
+                    },
+                    "unit_amount": int(payment.amount * 100),
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
+            success_url="http://localhost:3000/success",
+            cancel_url="http://localhost:3000/cancel",
+            metadata={
+                "payment_id": payment.id
+            }
+        )
+
+        return Response({
+            "checkout_url": checkout_session.url
+        })
+
     
 
     
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def payment_webhook(request):
-    payment_id = request.data.get("payment_id")
-    status = request.data.get("status")
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
 
     try:
+        event = stripe.Webhook.construct_event(
+            payload,
+            sig_header,
+            settings.STRIPE_WEBHOOK_SECRET
+        )
+    except Exception:
+        return Response(status=400)
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        payment_id = session["metadata"]["payment_id"]
+
         payment = Payment.objects.get(id=payment_id)
 
-        if payment.status != "successful":
-            payment.status = status
-            payment.save()
+        payment.status = "successful"
+        payment.transaction_id = session["payment_intent"]
+        payment.save()
 
-        return Response({"message": "Webhook processed"})
-    except Payment.DoesNotExist:
-        return Response({"error": "Payment not found"}, status=404)
+        update_order_status_task.delay(payment.id)
+
+    return Response(status=200)

@@ -6,4 +6,4 @@ python-dotenv
 requests
 celery
 redis
-    
+stripe
