@@ -5,3 +5,6 @@ django-redis
 psycopg2-binary
 python-dotenv
 django-filter
+requests
+numpy
+scikit-learn
