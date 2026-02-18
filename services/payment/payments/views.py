@@ -1,31 +1,21 @@
-<<<<<<< HEAD
-=======
-import requests
 import uuid
-
->>>>>>> b3e5504540a0b6e53f893705354447de26d41d17
 from django.conf import settings
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-
-<<<<<<< HEAD
+from rest_framework import status
 from .tasks import update_order_status_task
 import stripe
-=======
-from .tasks import process_payment_task
->>>>>>> b3e5504540a0b6e53f893705354447de26d41d17
+from .services.chapa import chapa_initialize_payment
+from .tasks import verify_payment_task
 
 from .models import Payment
 from .serializers import PaymentSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 
-<<<<<<< HEAD
 stripe.api_key = settings.STRIPE_SECRET_KEY
-=======
->>>>>>> b3e5504540a0b6e53f893705354447de26d41d17
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
@@ -59,7 +49,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
         if payment.status != "pending":
             raise ValidationError("Payment already processed.")
-<<<<<<< HEAD
 
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=["card"],
@@ -85,18 +74,42 @@ class PaymentViewSet(viewsets.ModelViewSet):
             "checkout_url": checkout_session.url
         })
 
-=======
-        
-        process_payment_task.delay(payment.id, request.headers.get("Authorization"))
+    @action(detail=False, methods=["post"])
+    def initiate(self, request):
+        order_id = request.data.get("order_id")
+        amount = request.data.get("amount")
 
-        return Response({"message": "Payment is being processed"})
->>>>>>> b3e5504540a0b6e53f893705354447de26d41d17
-    
+        if not order_id or not amount:
+            return Response({"error": "order_id and amount required"}, status=400)
+
+        tx_ref = str(uuid.uuid4())
+
+        payment = Payment.objects.create(
+            order_id=order_id,
+            user_id=request.user.id,
+            amount=amount,
+            status="pending",
+            transaction_id=tx_ref,
+        )
+
+        chapa_response = chapa_initialize_payment(
+            amount=amount,
+            email=request.user.email,
+            full_name=request.user.username,
+            tx_ref=tx_ref,
+            callback_url="https://yourdomain.com/api/v1/payments/webhook/",
+        )
+
+        checkout_url = chapa_response.get("data", {}).get("checkout_url")
+
+        return Response({
+            "payment_id": payment.id,
+            "checkout_url": checkout_url
+        }, status=status.HTTP_201_CREATED)
 
     
 @api_view(["POST"])
 @permission_classes([AllowAny])
-<<<<<<< HEAD
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
@@ -123,19 +136,15 @@ def stripe_webhook(request):
         update_order_status_task.delay(payment.id)
 
     return Response(status=200)
-=======
-def payment_webhook(request):
-    payment_id = request.data.get("payment_id")
-    status = request.data.get("status")
 
-    try:
-        payment = Payment.objects.get(id=payment_id)
 
-        if payment.status != "successful":
-            payment.status = status
-            payment.save()
+@api_view(["POST"])
+def chapa_webhook(request):
+    tx_ref = request.data.get("tx_ref")
 
-        return Response({"message": "Webhook processed"})
-    except Payment.DoesNotExist:
-        return Response({"error": "Payment not found"}, status=404)
->>>>>>> b3e5504540a0b6e53f893705354447de26d41d17
+    if not tx_ref:
+        return Response({"error": "tx_ref missing"}, status=400)
+
+    verify_payment_task.delay(tx_ref)
+
+    return Response({"message": "Verification started"}, status=200)
