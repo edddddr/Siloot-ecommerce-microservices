@@ -115,13 +115,38 @@ services:
     ports:
       - "5436:5432"  
   
+  inventory-service:
+    build: ./services/inventory
+    container_name: inventory_service
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./services/inventory:/app
+    ports:
+      - "8001:8000"
+    env_file:
+      - ./services/inventory/.env
+    depends_on:
+      - inventory-db
+
+  inventory-db:
+    image: mongo:6.0
+    container_name: inventory_mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=inventory_db
+      # Optional: Add MONGO_INITDB_ROOT_USERNAME/PASSWORD for security
+    volumes:
+      - inventory_mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+
+
+
   redis:
     image: redis:7
     container_name: redis_cache
     ports:
       - "6379:6379"
-  
-  
     
   celery-worker:
     build: ./services/payment
@@ -138,4 +163,5 @@ volumes:
   product_db_data:
   order_db_data:
   payment_db_data:
+  inventory_mongo_data:
 
