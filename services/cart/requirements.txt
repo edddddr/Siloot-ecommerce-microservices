@@ -1,0 +1,5 @@
+Django>=4.2
+djangorestframework
+redis
+requests
+python-dotenv
