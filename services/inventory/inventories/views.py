@@ -5,7 +5,7 @@ from .mongo import inventory_collection
 from .services import reserve_inventory, release_inventory, deduct_inventory
 
 
-@api_view(["POST"])
+@api_view(  ["POST"])
 def create_inventory(request):
     data = request.data
 
