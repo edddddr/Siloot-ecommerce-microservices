@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
@@ -13,6 +14,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "carts",
 ]
+
 
 REDIS_URL = os.getenv("REDIS_URL")
 INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL")

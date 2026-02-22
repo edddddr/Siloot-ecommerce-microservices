@@ -122,7 +122,7 @@ services:
     volumes:
       - ./services/inventory:/app
     ports:
-      - "8001:8000"
+      - "8000"
     env_file:
       - ./services/inventory/.env
     depends_on:
@@ -139,14 +139,35 @@ services:
     ports:
       - "27017:27017"
 
-
-
+  cart-service:
+    build: ./services/cart
+    container_name: cart_service
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./services/cart:/app
+    expose:
+      - "8000"
+    env_file:
+      - ./services/cart/.env
+    depends_on:
+      - cart-db
+  
+  cart-db:
+    image: redis:7
+    container_name: cart_db
+    environment:
+      - MONGO_INITDB_DATABASE=inventory_db
+    volumes:
+      - redis_cart_data:/data/db
+    ports:
+      - "6380:6379"
 
   redis:
     image: redis:7
     container_name: redis_cache
     ports:
       - "6379:6379"
+    
     
   celery-worker:
     build: ./services/payment
@@ -164,4 +185,5 @@ volumes:
   order_db_data:
   payment_db_data:
   inventory_mongo_data:
+  redis_cart_data:
 
