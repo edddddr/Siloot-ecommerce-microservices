@@ -3,22 +3,34 @@ from rest_framework.response import Response
 from rest_framework import status
 from .mongo import inventory_collection
 from .services import reserve_inventory, release_inventory, deduct_inventory
+from bson import json_util
 
 
-@api_view(  ["POST"])
-def create_inventory(request):
-    data = request.data
+@api_view(["POST", "GET"])
+def create_or_get_inventory(request):
 
-    doc = {
-        "product_id": data["product_id"],
-        "available_quantity": data["available_quantity"],
-        "reserved_quantity": 0,
-        "warehouse": data["warehouse"]
-    }
+    if request.method == "POST":
+        data = request.data
 
-    inventory_collection.insert_one(doc)
+        doc = {
+            "product_id": data["product_id"],
+            "available_quantity": data["available_quantity"],
+            "reserved_quantity": 0,
+            "warehouse": data["warehouse"]
+        }
 
-    return Response({"message": "Inventory created"}, status=201)
+        inventory_collection.insert_one(doc)
+
+        return Response({"message": "Inventory created"}, status=201)
+    else:
+        inv = inventory_collection.find()
+
+        json_data = json_util.dumps(inv)
+
+        if not json_data:
+            return Response({"error": "Not found"}, status=404)
+
+        return Response(json_data)    
 
 
 @api_view(["GET"])
