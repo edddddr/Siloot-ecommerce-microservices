@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # --- Databases & Infrastructure ---
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
+    environment:
+      - POSTGRES_DB=auth_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    networks:
+      - ecommerce-network
+
+  catalog-db:
+    image: mongo:latest
+    container_name: catalog-db
+    networks:
+      - ecommerce-network
+
+  # Shared Postgres for Order/Payment/Inventory (Separate DBs in one instance for dev efficiency)
+  main-db:
+    image: postgres:15-alpine
+    container_name: main-db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    networks:
+      - ecommerce-network
+
+  redis-broker:
+    image: redis:7-alpine
+    container_name: redis-broker
+    networks:
+      - ecommerce-network
+
+  # --- Application Services ---
+  auth-service:
+    build: ./services/auth
+    ports: ["8001:8000"]
+    depends_on: [auth-db]
+    networks: [ecommerce-network]
+
+  catalog-service:
+    build: ./services/catalog-service
+    ports: ["8002:8000"]
+    depends_on: [catalog-db]
+    networks: [ecommerce-network]
+
+  order-service:
+    build: ./services/order-service
+    ports: ["8003:8000"]
+    depends_on: [main-db]
+    networks: [ecommerce-network]
+
+  inventory-service:
+    build: ./services/inventory-service
+    ports: ["8004:8000"]
+    depends_on: [main-db, redis-broker]
+    networks: [ecommerce-network]
+
+  payment-service:
+    build: ./services/payment-service
+    ports: ["8005:8000"]
+    depends_on: [main-db]
+    networks: [ecommerce-network]
+
+networks:
+  ecommerce-network:
+    driver: bridge
