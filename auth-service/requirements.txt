@@ -1,0 +1,7 @@
+Django>=5.0
+djangorestframework
+psycopg[binary]
+djangorestframework-simplejwt
+argon2-cffi
+django-environ
+django-redis
