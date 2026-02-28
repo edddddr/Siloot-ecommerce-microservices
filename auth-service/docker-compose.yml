@@ -21,13 +21,16 @@ services:
     build: .
     container_name: auth-service
     command: >
-      sh -c "django-admin startproject config ."
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./app:/app
     ports:
       - "8001:8000"
     env_file:
       - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev  
     depends_on:
       - auth-db
       - auth-redis
