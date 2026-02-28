@@ -1,5 +1,0 @@
-django
-djangorestframework
-djangorestframework-simplejwt  # For JWT handling
-psycopg2-binary               # Postgres driver
-django-cors-headers           # To allow frontend access
