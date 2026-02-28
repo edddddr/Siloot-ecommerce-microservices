@@ -21,8 +21,7 @@ services:
     build: .
     container_name: auth-service
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
+      sh -c "django-admin startproject config ."
     volumes:
       - ./app:/app
     ports:
