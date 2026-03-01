@@ -1,9 +1,11 @@
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer, LoginSerializer
+from .tokens import InternalServiceToken
 
 
 class RegisterView(APIView):
@@ -34,3 +36,23 @@ class LogoutView(APIView):
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class InternalTokenView(APIView):
+    permission_classes = [AllowAny]  # we secure it differently
+
+    def post(self, request):
+        shared_secret = request.headers.get("X-Internal-Secret")
+
+        if shared_secret != "internal-secret-key":
+            return Response({"error": "Unauthorized"}, status=403)
+
+        service_name = request.data.get("service_name")
+
+        if not service_name:
+            return Response({"error": "service_name required"}, status=400)
+
+        token = InternalServiceToken.for_service(service_name)
+
+        return Response({"access": str(token)})
