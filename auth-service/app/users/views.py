@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer, LoginSerializer
 from .tokens import InternalServiceToken
 from rest_framework.throttling import ScopedRateThrottle
+import os
 
 
 class RegisterView(APIView):
@@ -43,19 +44,10 @@ class LogoutView(APIView):
 
 
 class InternalTokenView(APIView):
-    permission_classes = [AllowAny]  # we secure it differently
+    permission_classes = [AllowAny]
 
     def post(self, request):
         shared_secret = request.headers.get("X-Internal-Secret")
 
-        if shared_secret != "internal-secret-key":
+        if shared_secret != os.getenv("INTERNAL_SERVICE_SECRET"):
             return Response({"error": "Unauthorized"}, status=403)
-
-        service_name = request.data.get("service_name")
-
-        if not service_name:
-            return Response({"error": "service_name required"}, status=400)
-
-        token = InternalServiceToken.for_service(service_name)
-
-        return Response({"access": str(token)})
