@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import InternalTokenView, RegisterView, LoginView, LogoutView
+from .health import HealthCheckView
 
 urlpatterns = [
     path("register/", RegisterView.as_view()),
@@ -9,4 +10,5 @@ urlpatterns = [
 
 urlpatterns += [
     path("internal/token/", InternalTokenView.as_view()),
+    path("health/", HealthCheckView.as_view()),
 ]
