@@ -1,7 +1,8 @@
 Django>=5.0
 djangorestframework
 psycopg[binary]
-djangorestframework-simplejwt
+# djangorestframework-simplejwt
+djangorestframework-simplejwt[crypto]
 argon2-cffi
 django-environ
 django-redis
