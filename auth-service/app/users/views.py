@@ -51,3 +51,12 @@ class InternalTokenView(APIView):
 
         if shared_secret != os.getenv("INTERNAL_SERVICE_SECRET"):
             return Response({"error": "Unauthorized"}, status=403)
+        
+        service_name = request.data.get("service_name")
+
+        if not service_name:
+            return Response({"error": "service_name required"}, status=400)
+
+        token = InternalServiceToken.for_service(service_name)
+
+        return Response({"access": str(token)})
