@@ -58,3 +58,18 @@ class AuthAPITest(APITestCase):
         })
 
         self.assertEqual(response.status_code, 205)
+
+
+    def test_login_throttle(self):
+        User.objects.create_user(
+            email="test@example.com",
+            password="StrongPass123"
+        )
+
+        for _ in range(6):
+            response = self.client.post(self.login_url, {
+                "email": "test@example.com",
+                "password": "WrongPassword"
+            })
+
+        self.assertEqual(response.status_code, 429)
