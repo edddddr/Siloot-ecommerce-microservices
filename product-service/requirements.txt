@@ -4,3 +4,5 @@ psycopg[binary]
 redis
 django-redis
 python-dotenv
+django-filter
+faker
