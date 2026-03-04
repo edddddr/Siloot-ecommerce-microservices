@@ -95,6 +95,7 @@ SIMPLE_JWT = {
     "VERIFYING_KEY": env("JWT_PUBLIC_KEY"),
 
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "ISSUER": "auth-service",
 }
 
 AUTHENTICATION_BACKENDS = [
