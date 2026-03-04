@@ -6,3 +6,4 @@ django-redis
 python-dotenv
 django-filter
 faker
+djangorestframework-simplejwt[crypto]

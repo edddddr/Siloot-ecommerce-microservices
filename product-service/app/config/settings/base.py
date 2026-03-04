@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -63,11 +64,7 @@ TEMPLATES = [
     },
 ]
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-}
+
 
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
@@ -78,6 +75,13 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.CursorPagination",
     "PAGE_SIZE": 10,
 }
+
+REST_FRAMEWORK.update({
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+})
+
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
@@ -105,8 +109,17 @@ CACHES = {
     }
 }
 
-# Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
+
+SIMPLE_JWT = {
+    "ALGORITHM": "RS256",
+    "VERIFYING_KEY": os.getenv("AUTH_PUBLIC_KEY"),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUDIENCE": None,
+    # "ISSUER": "auth-service",
+}
+
+print("___-=wewerrwerwer$$$$$$$$$$$$$$$$$$$$$$",os.getenv("AUTH_PUBLIC_KEY"))
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
