@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "rest_framework",
     "django_filters",
+    "drf_spectacular",  
+
+
     "catalog",
 ]
 
@@ -86,6 +89,10 @@ REST_FRAMEWORK.update({
     ),
 })
 
+REST_FRAMEWORK.update({
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+})
+
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
@@ -120,6 +127,13 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUDIENCE": None,
     "ISSUER": "auth-service",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Product Service API",
+    "DESCRIPTION": "Catalog and product management service",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 print("___-=wewerrwerwer$$$$$$$$$$$$$$$$$$$$$$",env("AUTH_PUBLIC_KEY"))
