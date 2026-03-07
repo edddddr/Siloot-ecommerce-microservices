@@ -30,3 +30,22 @@ class ReserveStockView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+
+
+class ConfirmReservationView(APIView):
+
+    def post(self, request):
+
+        serializer = ReservationActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        reservation = InventoryService.confirm_reservation(
+            serializer.validated_data["reservation_id"]
+        )
+
+        return Response(
+            {
+                "reservation_id": reservation.id,
+                "status": reservation.status
+            }
+        )
