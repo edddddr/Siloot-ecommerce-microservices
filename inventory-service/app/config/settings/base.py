@@ -5,7 +5,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+JWT_PUBLIC_KEY = open(BASE_DIR / "keys/public.pem").read()
+
+JWT_ALGORITHM = "RS256"
 
 
 # Quick-start development settings - unsuitable for production

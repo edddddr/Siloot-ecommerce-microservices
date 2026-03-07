@@ -10,7 +10,13 @@ from .serializers import (
 from .services import InventoryService
 
 
+from .authentication import InternalServiceAuthentication  
+from rest_framework.permissions import IsAuthenticated
+
 class ReserveStockView(APIView):
+
+    authentication_classes = [InternalServiceAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
 
@@ -33,6 +39,8 @@ class ReserveStockView(APIView):
 
 
 class ConfirmReservationView(APIView):
+    authentication_classes = [InternalServiceAuthentication]
+    permission_classes = [IsAuthenticated]    
 
     def post(self, request):
 
@@ -51,6 +59,8 @@ class ConfirmReservationView(APIView):
         )
 
 class ReleaseReservationView(APIView):
+    authentication_classes = [InternalServiceAuthentication]
+    permission_classes = [IsAuthenticated]    
 
     def post(self, request):
 
