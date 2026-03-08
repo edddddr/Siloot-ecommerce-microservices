@@ -9,13 +9,13 @@ services:
     volumes:
       - cart_db_data:/var/lib/postgresql/data
     ports:
-      - "5434:5432"
+      - "5436:5432"
 
   cart-redis:
     image: redis:7
     container_name: cart-redis
     ports:
-      - "6381:6379"
+      - "6383:6379"
 
   cart-service:
     build: .
@@ -26,7 +26,7 @@ services:
     volumes:
       - ./app:/app
     ports:
-      - "8002:8000"
+      - "8004:8000"
     env_file:
       - .env
     environment:
