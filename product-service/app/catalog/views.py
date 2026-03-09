@@ -4,7 +4,7 @@ from .serializers import CategorySerializer, ProductSerializer
 from .pagination import ProductCursorPagination
 
 # Permission and Authentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import IsAdminUserRole
 
 # caching
@@ -25,10 +25,13 @@ class CategoryViewSet(viewsets.ModelViewSet):
     lookup_field = "slug"
     pagination_class = ProductCursorPagination
 
+    
+
     def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [AllowAny()]        
         if self.action in ["create", "update", "partial_update", "destroy"]:
             return [IsAuthenticated(), IsAdminUserRole()]
-        return [IsAuthenticated()]
 
 class ProductViewSet(viewsets.ModelViewSet):
 
@@ -37,17 +40,23 @@ class ProductViewSet(viewsets.ModelViewSet):
     lookup_field = "slug"
     pagination_class = ProductCursorPagination
 
+    permission_classes = [AllowAny]
+
 
     filterset_fields = ["category", "is_active"]
     search_fields = ["name", "description"]
     ordering_fields = ["price", "created_at"]
 
     def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [AllowAny()]        
         if self.action in ["create", "update", "partial_update", "destroy"]:
             return [IsAuthenticated(), IsAdminUserRole()]
-        return [IsAuthenticated()]
     
     
+
+
+    # Caching | redis 
     def list(self, request, *args, **kwargs):
         cache_key = get_product_list_cache_key(request.query_params)
         cached_data = cache.get(cache_key)
