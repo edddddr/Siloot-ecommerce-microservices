@@ -7,7 +7,6 @@ python-dotenv
 django-filter
 faker
 djangorestframework-simplejwt[crypto]
-django-environ
 coverage
 drf-spectacular 
 PyJWT
