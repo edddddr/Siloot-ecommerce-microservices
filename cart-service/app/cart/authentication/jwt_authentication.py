@@ -9,6 +9,7 @@ class JWTAuthentication(BaseAuthentication):
     def authenticate(self, request):
 
         auth_header = request.headers.get("Authorization")
+        # print("Authorization : ", auth_header, "\n")
 
         if not auth_header:
             return None
@@ -23,7 +24,6 @@ class JWTAuthentication(BaseAuthentication):
                 token,
                 settings.AUTH_PUBLIC_KEY,
                 algorithms=["RS256"],
-                audience="cart-service",
             )
 
         except jwt.ExpiredSignatureError:
@@ -33,6 +33,7 @@ class JWTAuthentication(BaseAuthentication):
             raise AuthenticationFailed("Invalid token")
 
         user_id = payload.get("user_id")
+        
 
         if not user_id:
             raise AuthenticationFailed("Invalid token payload")

@@ -11,6 +11,7 @@ load_dotenv()
  
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = os.getenv("DEBUG", "False") == "True"
+AUTH_PUBLIC_KEY = os.getenv("AUTH_PUBLIC_KEY")
 
 ALLOWED_HOSTS = ["*"]
 
@@ -94,6 +95,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 
+REST_FRAMEWORK = {
+
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "cart.authentication.jwt_authentication.JWTAuthentication",
+    ),
+}
+
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -103,7 +112,6 @@ CACHES = {
         }
     }
 }
-
 
 AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = 'en-us'

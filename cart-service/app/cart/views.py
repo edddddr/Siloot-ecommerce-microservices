@@ -16,7 +16,7 @@ class CartView(APIView):
 
     def get(self, request):
 
-        user_id = request.headers.get("X-User-ID")
+        user_id = request.user
 
         cart = CartService.get_or_create_cart(user_id)
 
@@ -28,8 +28,9 @@ class CartView(APIView):
 class AddItemView(APIView):
 
     def post(self, request):
+        
+        user_id = request.user
 
-        user_id = request.headers.get("X-User-ID")
 
         serializer = AddItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -74,7 +75,7 @@ class ClearCartView(APIView):
 
     def delete(self, request):
 
-        user_id = request.headers.get("X-User-ID")
+        user_id = request.user
 
         CartService.clear_cart(user_id)
 
