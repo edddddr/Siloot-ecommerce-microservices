@@ -34,16 +34,25 @@ class AddItemView(APIView):
 
         serializer = AddItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        print("\n", "Fucntion", serializer.validated_data["product_id"], "\n")
 
-        item = CartService.add_item(
-            user_id=user_id,
-            product_id=serializer.validated_data["product_id"],
-            quantity=serializer.validated_data["quantity"],
-        )
+        try:
+
+            item = CartService.add_item(
+                user_id=user_id,
+                product_id=serializer.validated_data["product_id"],
+                quantity=serializer.validated_data["quantity"],
+            )
+
+        except ValueError as e:
+            return Response(
+                {"error": str(e)},
+                status=400
+            )
 
         return Response(
             {"item_id": item.id},
-            status=status.HTTP_201_CREATED
+            status=201
         )
 
 

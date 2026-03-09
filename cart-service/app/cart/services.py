@@ -1,6 +1,7 @@
 import uuid
 from django.db import transaction
 from .models import Cart, CartItem
+from .clients.product_client import ProductClient
 
 
 class CartService:
@@ -19,7 +20,14 @@ class CartService:
     @transaction.atomic
     def add_item(user_id, product_id, quantity):
 
+        print("\n","Product id : class ", product_id, "\n")
+
         cart = CartService.get_or_create_cart(user_id)
+
+        product = ProductClient.get_product(product_id)
+
+        if not product:
+            raise ValueError("Product does not exist")
 
         item, created = CartItem.objects.get_or_create(
             cart=cart,

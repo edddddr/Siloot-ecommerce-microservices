@@ -10,8 +10,12 @@ load_dotenv()
 
  
 SECRET_KEY = os.getenv("SECRET_KEY")
+
 DEBUG = os.getenv("DEBUG", "False") == "True"
+
 AUTH_PUBLIC_KEY = os.getenv("AUTH_PUBLIC_KEY")
+
+PRODUCT_SERVICE_URL = os.getenv("PRODUCT_SERVICE_URL")
 
 ALLOWED_HOSTS = ["*"]
 
