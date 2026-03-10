@@ -2,6 +2,7 @@ import uuid
 from django.db import transaction
 from .models import Cart, CartItem
 from .clients.product_client import ProductClient
+from .clients.inventory_client import InventoryClient
 
 
 class CartService:
@@ -26,17 +27,30 @@ class CartService:
 
         product = ProductClient.get_product(product_id)
 
-        if not product:
-            raise ValueError("Product does not exist")
+        available_stock = InventoryClient.get_stock(product_id)
+
+        if quantity > available_stock:
+            raise ValueError("Not enough stock available")
+
+        product = ProductClient.get_product(product_id)
+
+        print("/n", product["name"], "/n", product["price"])
+
+        product_name = product["name"]
+        price = product["price"]
 
         item, created = CartItem.objects.get_or_create(
             cart=cart,
             product_id=product_id,
-            defaults={"quantity": quantity}
+            product_name = product_name,
+            quantity = quantity,
+            price  = price,
         )
 
+        print(item)
+
         if not created:
-            item.quantity += quantity
+            # item.quantity += quantity
             item.save()
 
         return item

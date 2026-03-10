@@ -16,6 +16,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 AUTH_PUBLIC_KEY = os.getenv("AUTH_PUBLIC_KEY")
 
 PRODUCT_SERVICE_URL = os.getenv("PRODUCT_SERVICE_URL")
+INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL")
 
 ALLOWED_HOSTS = ["*"]
 
