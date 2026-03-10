@@ -7,6 +7,10 @@ from .pagination import ProductCursorPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import IsAdminUserRole
 
+# For cutsome Look up
+import uuid
+from django.shortcuts import get_object_or_404
+
 # caching
 from django.core.cache import cache
 from rest_framework.response import Response
@@ -22,8 +26,28 @@ from .services.cache import invalidate_product_cache
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    lookup_field = "slug"
     pagination_class = ProductCursorPagination
+
+    def get_object(self):
+        """
+        Custom lookup to support both UUID (pk) and Slug
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # 'pk' is the default name for the variable in the URL
+        lookup_value = self.kwargs.get('pk')
+
+        # 1. Check if the value is a valid UUID
+        try:
+            uuid_obj = uuid.UUID(str(lookup_value))
+            # If valid UUID, look up by ID
+            obj = get_object_or_404(queryset, id=uuid_obj)
+        except (ValueError, AttributeError):
+            # 2. If not a UUID, treat it as a slug
+            obj = get_object_or_404(queryset, slug=lookup_value)
+
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     
 
@@ -37,11 +61,35 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     queryset = Product.objects.filter(is_active=True).select_related("category")
     serializer_class = ProductSerializer
-    lookup_field = "slug"
     pagination_class = ProductCursorPagination
 
-    permission_classes = [AllowAny]
+    # def get_object(self):
+    #     return Product.objects.first()
 
+    def get_object(self):
+        """
+        Custom lookup to support both UUID (pk) and Slug
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # 'pk' is the default name for the variable in the URL
+        lookup_value = self.kwargs.get('pk')
+
+        # Debugging: See what value is coming from the URL
+        print(f"--- Searching for Product with value: {lookup_value} ---")
+        try:
+            uuid_obj = uuid.UUID(str(lookup_value))
+            print("Detected format: UUID")
+            # If valid UUID, look up by ID
+            obj = get_object_or_404(queryset, id=uuid_obj)
+        except (ValueError, AttributeError):
+            # 2. If not a UUID, treat it as a slug
+            print("Detected format: SLUG")
+            obj = get_object_or_404(queryset, slug=lookup_value)
+
+        self.check_object_permissions(self.request, obj)
+        return obj
+      
 
     filterset_fields = ["category", "is_active"]
     search_fields = ["name", "description"]
@@ -72,16 +120,20 @@ class ProductViewSet(viewsets.ModelViewSet):
     
 
     def retrieve(self, request, *args, **kwargs):
-        slug = kwargs.get("slug")
-        cache_key = get_product_detail_cache_key(slug)
+    # Use 'pk' because that is what the router sends, 
+    # even if the value inside is actually a slug string.
+        lookup_value = kwargs.get("pk") 
+        cache_key = get_product_detail_cache_key(lookup_value)
+        
         cached_data = cache.get(cache_key)
-
         if cached_data:
             return Response(cached_data)
 
         response = super().retrieve(request, *args, **kwargs)
-
-        cache_product_detail(cache_key, response.data)
+        
+        # Only cache if the request was successful (200 OK)
+        if response.status_code == 200:
+            cache_product_detail(cache_key, response.data)
 
         return response
     
@@ -98,3 +150,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.delete()
         invalidate_product_cache()
+
+
+

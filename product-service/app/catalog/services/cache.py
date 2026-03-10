@@ -25,3 +25,4 @@ def cache_product_detail(key, data):
 def invalidate_product_cache():
     cache.delete_pattern("product_list:*")
     cache.delete_pattern("product_detail:*")
+    
