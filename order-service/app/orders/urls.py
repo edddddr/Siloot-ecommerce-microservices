@@ -8,5 +8,7 @@ urlpatterns = [
 
     path("orders/<uuid:order_id>/", OrderDetailView.as_view()),
 
-    path("orders/<uuid:user_id>/", UserOrdersView.as_view()),
+    path("orders/user/<uuid:user_id>/", UserOrdersView.as_view()),
+
+
 ]
