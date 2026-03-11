@@ -67,3 +67,20 @@ class OrderService:
         )
 
         return order
+
+
+
+    @staticmethod
+    def build_inventory_reservation(order):
+
+        reservations = []
+
+        for item in order.items.all():
+
+            reservations.append({
+                "order_id": str(order.id),
+                "product_id": str(item.product_id),
+                "quantity": item.quantity
+            })
+
+        return reservations
