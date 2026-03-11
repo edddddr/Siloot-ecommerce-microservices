@@ -1,3 +1,28 @@
-from django.shortcuts import render
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 
-# Create your views here.
+from .models import Order
+from .serializers import OrderSerializer, OrderCreateSerializer
+from .services import OrderService
+
+
+
+class CreateOrderView(APIView):
+
+    def post(self, request):
+
+        serializer = OrderCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+
+        order = OrderService.create_order(
+            user_id=data["user_id"],
+            cart_items=data["items"]
+        )
+
+        response = OrderSerializer(order)
+
+        return Response(response.data, status=status.HTTP_201_CREATED)
+
