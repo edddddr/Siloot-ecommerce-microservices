@@ -84,3 +84,12 @@ class OrderService:
             })
 
         return reservations
+
+    @staticmethod
+    def build_payment_payload(order):
+
+        return {
+            "order_id": str(order.id),
+            "amount": str(order.total_amount),
+            "currency": order.currency
+        }
