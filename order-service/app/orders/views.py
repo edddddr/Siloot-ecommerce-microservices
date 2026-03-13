@@ -6,6 +6,9 @@ from .models import Order, OrderStatus
 from .serializers import OrderSerializer, OrderCreateSerializer, PaymentResultSerializer
 from .services import OrderService
 
+from .authentication import InternalServiceAuthentication
+from rest_framework.permissions import IsAuthenticated
+
 
 
 class CreateOrderView(APIView):
@@ -59,6 +62,9 @@ class UserOrdersView(APIView):
 
 class PaymentSuccessView(APIView):
 
+    authentication_classes = [InternalServiceAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
 
         serializer = PaymentResultSerializer(data=request.data)
@@ -86,6 +92,10 @@ class PaymentSuccessView(APIView):
 
 class PaymentFailedView(APIView):
 
+    authentication_classes = [InternalServiceAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    
     def post(self, request):
 
         serializer = PaymentResultSerializer(data=request.data)
