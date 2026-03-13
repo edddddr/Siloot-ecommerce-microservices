@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Order
-from .serializers import OrderSerializer, OrderCreateSerializer
+from .models import Order, OrderStatus
+from .serializers import OrderSerializer, OrderCreateSerializer, PaymentResultSerializer
 from .services import OrderService
 
 
@@ -55,3 +55,32 @@ class UserOrdersView(APIView):
         serializer = OrderSerializer(orders, many=True)
 
         return Response(serializer.data)
+
+
+class PaymentSuccessView(APIView):
+
+    def post(self, request):
+
+        serializer = PaymentResultSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        order_id = serializer.validated_data["order_id"]
+
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return Response(
+                {"detail": "Order not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        OrderService.update_order_status(
+            order,
+            OrderStatus.PAID,
+            "Payment completed"
+        )
+
+        return Response({"message": "Order marked as paid"})
+
+
+
