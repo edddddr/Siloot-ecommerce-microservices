@@ -84,3 +84,27 @@ class PaymentSuccessView(APIView):
 
 
 
+class PaymentFailedView(APIView):
+
+    def post(self, request):
+
+        serializer = PaymentResultSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        order_id = serializer.validated_data["order_id"]
+
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return Response(
+                {"detail": "Order not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        OrderService.update_order_status(
+            order,
+            OrderStatus.FAILED,
+            "Payment failed"
+        )
+
+        return Response({"message": "Order marked as failed"})
