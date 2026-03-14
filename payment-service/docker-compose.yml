@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  payment-db:
+    image: postgres:15
+    container_name: payment-db
+    env_file:
+      - .env
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    ports:
+      - "5438:5432"
+
+  payment-redis:
+    image: redis:7
+    container_name: payment-redis
+    ports:
+      - "6385:6379"
+
+  payment-service:
+    build: .
+    container_name: payment-service
+    # command: >
+    #   sh -c "python manage.py migrate &&
+    #          python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./app:/app
+    ports:
+      - "8006:8000"
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev  
+    depends_on:
+      - payment-db
+      - payment-redis
+
+volumes:
+  payment_db_data:

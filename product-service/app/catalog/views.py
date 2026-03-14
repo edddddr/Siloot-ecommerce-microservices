@@ -76,15 +76,15 @@ class ProductViewSet(viewsets.ModelViewSet):
         lookup_value = self.kwargs.get('pk')
 
         # Debugging: See what value is coming from the URL
-        print(f"--- Searching for Product with value: {lookup_value} ---")
+        
         try:
             uuid_obj = uuid.UUID(str(lookup_value))
-            print("Detected format: UUID")
+            
             # If valid UUID, look up by ID
             obj = get_object_or_404(queryset, id=uuid_obj)
         except (ValueError, AttributeError):
             # 2. If not a UUID, treat it as a slug
-            print("Detected format: SLUG")
+            
             obj = get_object_or_404(queryset, slug=lookup_value)
 
         self.check_object_permissions(self.request, obj)

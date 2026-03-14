@@ -19,15 +19,16 @@ from .cache import InventoryCache
 from drf_spectacular.utils import extend_schema
 
 
-@extend_schema(
-    summary="Reserve stock for an order",
-    description="Temporarily reserves stock for a product during checkout.",
-)
 class ReserveStockView(APIView):
 
     authentication_classes = [InternalServiceAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  
 
+    @extend_schema(
+        summary="Reserve stock for an order",
+        description="Temporarily reserves stock for a product during checkout.",
+    )
+    
     def post(self, request):
 
         serializer = ReserveStockSerializer(data=request.data)
