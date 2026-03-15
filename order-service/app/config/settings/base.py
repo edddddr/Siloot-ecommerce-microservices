@@ -22,7 +22,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+SERVICE_NAME = "order-service"
 
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
+INTERNAL_SERVICE_SECRET=os.getenv("INTERNAL_SERVICE_SECRET")
 # Application definition
 
 INSTALLED_APPS = [

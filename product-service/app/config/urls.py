@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.urls import path, include
 from catalog.health import health_check
 from drf_spectacular.views import (
@@ -8,6 +9,7 @@ from drf_spectacular.views import (
 
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
     path("api/v1/", include("catalog.urls")),
     path("api/v1/health/", health_check),
 

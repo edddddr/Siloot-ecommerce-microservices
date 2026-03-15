@@ -7,7 +7,7 @@ from .integrations.inventory_client import InventoryClient
 from .integrations.payment_client import PaymentClient
 
 
-
+    
 class OrderService:
     """
     Handles order business logic and orchestration.
@@ -39,35 +39,35 @@ class OrderService:
             "Inventory reserved successfully"
         )
 
-        payment_payload = OrderService.build_payment_payload(order)
+        # payment_payload = OrderService.build_payment_payload(order)
 
-        PaymentClient.start_payment(payment_payload)
+        # PaymentClient.start_payment(payment_payload)
 
         
 
-        for item in cart_items:
+        # for item in cart_items:
 
-            product_id = item["product_id"]
-            quantity = item["quantity"]
-            price = Decimal(item["price"])
+        #     product_id = item["product_id"]
+        #     quantity = item["quantity"]
+        #     price = Decimal(item["price"])
 
-            OrderItem.objects.create(
-                order=order,
-                product_id=product_id,
-                quantity=quantity,
-                price=price
-            )
+        #     OrderItem.objects.create(
+        #         order=order,
+        #         product_id=product_id,
+        #         quantity=quantity,
+        #         price=price
+        #     )
 
-            total_amount += price * quantity
+        #     total_amount += price * quantity
 
-        order.total_amount = total_amount
-        order.save()
+        # order.total_amount = total_amount
+        # order.save()
 
-        OrderStatusHistory.objects.create(
-            order=order,
-            status=OrderStatus.CREATED,
-            note="Order created from cart"
-        )
+        # OrderStatusHistory.objects.create(
+        #     order=order,
+        #     status=OrderStatus.CREATED,
+        #     note="Order created from cart"
+        # )
 
         return order
 

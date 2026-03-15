@@ -1,5 +1,6 @@
 import requests
 import os
+from .auth_client import AuthClient
 
 INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL")
 
@@ -8,18 +9,32 @@ class InventoryClient:
 
     @staticmethod
     def reserve_stock(reservations):
+        token = AuthClient.get_internal_token()
+
+        
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            'Content-Type': 'application/json'
+        }
+
+        
 
         responses = []
 
         for item in reservations:
 
             response = requests.post(
-                f"{INVENTORY_SERVICE_URL}/reserve",
-                json=item
+                f"{INVENTORY_SERVICE_URL}/reserve/",
+                json=item,
+                headers= headers
             )
+            print("reserved: _______________--------------------------", response.status_code)
 
             if response.status_code != 200:
                 raise Exception("Inventory reservation failed")
+   
+                
 
             responses.append(response.json())
 
@@ -28,10 +43,16 @@ class InventoryClient:
 
     @staticmethod
     def release_stock(reservation):
+        token = AuthClient.get_internal_token()
+
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
 
         response = requests.post(
-            f"{INVENTORY_SERVICE_URL}/release",
-            json=reservation
+            f"{INVENTORY_SERVICE_URL}/release/",
+            json=reservation,
+            headers=headers,
         )
 
         if response.status_code != 200:

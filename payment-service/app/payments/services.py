@@ -5,6 +5,10 @@ from django.conf import settings
 from django.db import transaction
 
 from .models import Payment, PaymentTransaction, PaymentStatus
+from auth_client import AuthClient                
+
+import requests
+from django.conf import settings
 
 
 class PaymentService:
@@ -72,10 +76,25 @@ class PaymentService:
     @staticmethod
     def notify_order_service(payment):
 
-        if payment.status == PaymentStatus.SUCCEEDED:
-            endpoint = "/orders/payment-success/"
-        else:
-            endpoint = "/orders/payment-failed/"
+        token = AuthClient.get_internal_token()
 
-        # This will be implemented in Step 7
-        print(f"Notify Order Service: {endpoint}")
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        payload = {
+            "order_id": payment.order_id
+        }
+
+        if payment.status == PaymentStatus.SUCCEEDED:
+            url = f"{settings.ORDER_SERVICE_URL}/api/v1/orders/payment-success/"
+        else:
+            url = f"{settings.ORDER_SERVICE_URL}/api/v1/orders/payment-failed/"
+
+        try:
+            response = requests.post(url, json=payload, headers=headers)
+
+            print("Order service response:", response.status_code)
+
+        except Exception as e:
+            print("Failed to notify Order Service:", str(e))
