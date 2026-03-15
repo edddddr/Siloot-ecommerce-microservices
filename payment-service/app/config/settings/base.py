@@ -6,7 +6,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+JWT_PUBLIC_KEY = open(BASE_DIR / "keys/public.pem").read()
+
+JWT_ALGORITHM = "RS256"
+
+ORDER_SERVICE_URL = os.getenv("ORDER_SERVICE_URL")
+
+
+SERVICE_NAME = os.getenv("SERVICE_NAME")
 
 
 # Quick-start development settings - unsuitable for production
@@ -99,11 +108,15 @@ CACHES = {
 # DRF
 
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny"
-    ]
-}
 
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -116,6 +129,12 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
+
+SIMPLE_JWT = {
+
+    "ALGORITHM": "RS256",
+    "VERIFYING_KEY": JWT_PUBLIC_KEY,
+}
 
 
 # Password validation
