@@ -1,5 +1,6 @@
 import uuid
 import random
+import time
 
 from django.conf import settings
 from django.db import transaction
@@ -103,16 +104,30 @@ class PaymentService:
             "order_id": order_id
         }
 
+            
+
         if payment.status == PaymentStatus.SUCCEEDED:
             url = f"{settings.ORDER_SERVICE_URL}/payment-success/"
             print(payload, "SUCCEEDED")
         else:
             url = f"{settings.ORDER_SERVICE_URL}/payment-failed/"
 
-        try:
-            response = requests.post(url, json=payload, headers=headers)
+        retries = 3
+        delay = 2
 
-            print("Order service response:", response.status_code)
+        for attempt in range(retries):
+            try:
+                response = requests.post(url, json=payload, headers=headers, timeout=5)
 
-        except Exception as e:
-            print("Failed to notify Order Service:", str(e))
+                if response.status_code == 200:
+                    print("Order Service notified successfully")
+                    return True
+
+            except Exception as e:
+                print("Failed to notify Order Service:", str(e))
+
+            time.sleep(delay)        
+
+
+        print("Failed to notify Order Service after retries")
+        return False        

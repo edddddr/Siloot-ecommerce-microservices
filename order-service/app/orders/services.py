@@ -63,7 +63,8 @@ class OrderService:
 
             payment_payload = OrderService.build_payment_payload(order)
             # print("\n", {"payment_payload : ": payment_payload})
-            PaymentClient.start_payment(payment_payload)
+            transaction.on_commit(lambda: PaymentClient.start_payment(payment_payload))
+            # PaymentClient.start_payment(payment_payload)
 
         except Exception as e:
             # In a real system, you'd handle rollback/compensation here
