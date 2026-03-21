@@ -115,7 +115,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         response = super().list(request, *args, **kwargs)
 
         cache_product_list(cache_key, response.data)
-
+    
         return response
     
 
