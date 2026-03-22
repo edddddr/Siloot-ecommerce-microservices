@@ -1,0 +1,31 @@
+  global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: "nginx"
+    static_configs:
+      - targets: ["api-gateway:80"]
+
+  - job_name: "auth-service"
+    static_configs:
+      - targets: ["auth-service:8000"]
+
+  - job_name: "product-service"
+    static_configs:
+      - targets: ["product-service:8000"]
+
+  - job_name: "inventory-service"
+    static_configs:
+      - targets: ["inventory-service:8000"]
+
+  - job_name: "cart-service"
+    static_configs:
+      - targets: ["cart-service:8000"]
+
+  - job_name: "order-service"
+    static_configs:
+      - targets: ["order-service:8000"]
+
+  - job_name: "payment-service"
+    static_configs:
+      - targets: ["payment-service:8000"]
