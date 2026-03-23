@@ -12,9 +12,8 @@ class OrderCreatedConsumer(EventConsumer):
         print("[Payment] Processing order:", event["data"]["order_id"])
 
         # Simulate payment processing
-        # order_id = event["data"]["order_id"]
-        # amount = event["data"]["amount"]
-        order_id = "123"
+        order_id = event["data"]["order_id"]
+        amount = event["data"]["amount"]
 
         amount = 200
     
