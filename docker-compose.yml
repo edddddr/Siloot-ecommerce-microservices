@@ -198,7 +198,7 @@ services:
   payment-service:
     build: ./payment-service
     container_name: payment-service
-    command: sh /entrypoint.sh
+    command: sh /entrypoint.sh 
     volumes:
       - ./payment-service:/app
     ports:

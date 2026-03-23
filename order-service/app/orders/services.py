@@ -6,6 +6,10 @@ from .models import Order, OrderItem, OrderStatus, OrderStatusHistory
 from .integrations.inventory_client import InventoryClient
 from .integrations.payment_client import PaymentClient
 
+from .common.messaging.rabbitmq import EventPublisher
+from .common.event.order_events import build_order_created_event
+
+
 
     
 class OrderService:
@@ -61,9 +65,22 @@ class OrderService:
                 "Inventory reserved successfully"
             )
 
-            payment_payload = OrderService.build_payment_payload(order)
+            # payment_payload = OrderService.build_payment_payload(order)
             # print("\n", {"payment_payload : ": payment_payload})
-            transaction.on_commit(lambda: PaymentClient.start_payment(payment_payload))
+            publisher = EventPublisher()
+
+            event = build_order_created_event(order)
+
+            # transaction.on_commit(lambda: 
+            #     publisher.publish(
+            #                     "order.created",
+            #                     event
+            #                     )
+            # )
+            publisher.publish(
+                                "order.created",
+                                event
+                                )
             # PaymentClient.start_payment(payment_payload)
 
         except Exception as e:
