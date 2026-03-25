@@ -160,7 +160,7 @@ services:
   order-service:
     build: ./order-service
     container_name: order-service
-    command: sh /entrypoint.sh
+    command: sh /entrypoint.sh python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./order-service:/app
     ports:
@@ -191,6 +191,19 @@ services:
     networks:
       - microservices-network
 
+  order-worker:
+    build: ./order-service
+    command: sh /entrypoint.sh python manage.py run_consumers
+    env_file:
+      - ./order-service/.env
+    depends_on:
+      - order-db
+      - rabbitmq
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev   
+    networks:
+      - microservices-network  
+
 
   # ========================
   # 💳 PAYMENT SERVICE
@@ -198,7 +211,7 @@ services:
   payment-service:
     build: ./payment-service
     container_name: payment-service
-    command: sh /entrypoint.sh 
+    command: sh /entrypoint.sh python /app/app/manage.py runserver 0.0.0.0:8000
     volumes:
       - ./payment-service:/app
     ports:
@@ -229,6 +242,22 @@ services:
     networks:
       - microservices-network
 
+  payment-worker:
+    build: ./payment-service
+    command: sh /entrypoint.sh python manage.py run_consumers
+    env_file:
+      - ./payment-service/.env
+    depends_on:
+      - payment-db
+      - rabbitmq
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev   
+    networks:
+      - microservices-network 
+
+
+
+
   rabbitmq:
     image: rabbitmq:3-management
     hostname: rabbitmq
@@ -244,9 +273,9 @@ services:
 
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+
     networks:
       - microservices-network
-
 
   api-gateway:
       build: ./api-gateway
@@ -262,45 +291,30 @@ services:
       networks:
         - microservices-network
     
-  loki:
-    image: grafana/loki:2.9.0
-    container_name: loki
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - microservices-network
+  # loki:
+  #   image: grafana/loki:2.9.0
+  #   container_name: loki
+  #   ports:
+  #     - "3100:3100"
+  #   command: -config.file=/etc/loki/local-config.yaml
 
-  grafana:
-    image: grafana/grafana:10.2.0
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    networks:
-     - microservices-network
+  # grafana:
+  #   image: grafana/grafana:10.2.0
+  #   container_name: grafana
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
 
   
-  promtail:
-    image: grafana/promtail:2.9.0
-    container_name: promtail
-    volumes:
-      - /var/log:/var/log
-      - /var/lib/docker/containers:/var/lib/docker/containers
-      - ./promtail-config.yml:/etc/promtail/config.yml
-    command: -config.file=/etc/promtail/config.yml
-
-
-  prometheus:
-    image: prom/prometheus:v2.48.0
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml  
-    networks: 
-      - microservices-network
+  # promtail:
+  #   image: grafana/promtail:2.9.0
+  #   container_name: promtail
+  #   volumes:
+  #     - /var/log:/var/log
+  #     - /var/lib/docker/containers:/var/lib/docker/containers
+  #     - ./promtail-config.yml:/etc/promtail/config.yml
+  #   command: -config.file=/etc/promtail/config.yml
     
 
 # ========================
