@@ -92,3 +92,9 @@ class PaymentTransaction(models.Model):
 
     def __str__(self):
         return f"Transaction {self.transaction_id}"
+
+
+
+class ProcessedEvent(models.Model):
+    event_id = models.UUIDField(unique=True)
+    processed_at = models.DateTimeField(auto_now_add=True)
