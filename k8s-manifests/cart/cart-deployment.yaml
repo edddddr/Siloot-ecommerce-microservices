@@ -19,22 +19,16 @@ spec:
           ports:
             - containerPort: 8000
 
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"   
+
           envFrom:
             - configMapRef:
                 name: cart-config
             - secretRef:
                 name: cart-secret
-
-          # readinessProbe:
-          #   httpGet:
-          #     path: /api/v1/cart/
-          #     port: 8000
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 5
-
-          # livenessProbe:
-          #   httpGet:
-          #     path: /api/v1/cart/
-          #     port: 8000
-          #   initialDelaySeconds: 20
-          #   periodSeconds: 10
