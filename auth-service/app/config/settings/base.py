@@ -13,7 +13,7 @@ SECRET_KEY = env('DJANGO_SECRET_KEY')
 
 DEBUG = False
 
-allowed_hosts_str = os.getenv("ALLOWED_HOSTS", "")
+allowed_hosts_str = os.getenv("ALLOWED_HOSTS", default="*")
 
 ALLOWED_HOSTS =  [host.strip() for host in allowed_hosts_str.split(",") if host]
 print(ALLOWED_HOSTS)
@@ -108,10 +108,24 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://auth-redis:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         },
+#     }
+# }
+
+redis_host = env("REDIS_HOST", default="redis.data.svc.cluster.local")
+redis_port = os.getenv("REDIS_PORT", "6379")
+
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://auth-redis:6379/1",
+        "LOCATION": f"redis://{redis_host}:{redis_port}/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },

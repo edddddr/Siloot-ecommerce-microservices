@@ -6,6 +6,11 @@ from django.contrib.auth.models import (
     BaseUserManager,
 )
 
+class UserRole(models.TextChoices):
+    ADMIN = "admin", "Admin"
+    CUSTOMER = "customer", "Customer"
+    SELLER = "seller", "Seller"
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -33,6 +38,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+
+    role = models.CharField(
+        max_length=20,
+        choices=UserRole.choices,
+        default=UserRole.CUSTOMER
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

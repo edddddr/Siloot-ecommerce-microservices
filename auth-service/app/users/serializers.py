@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .services import log_login_attempt
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User
+from .models import User, UserRole
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -10,12 +10,24 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("email", "password", "first_name", "last_name")
+        fields = ("email", "password", "first_name", "last_name", "role")
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+        role = validated_data.get('role', UserRole.CUSTOMER)
+
+        if role == UserRole.ADMIN:
+             role = UserRole.CUSTOMER 
+
         user = User.objects.create_user(password=password, **validated_data)
+
+        user.role = role
+
+        user.save()
+
         return user
+
+
 
 
 class LoginSerializer(serializers.Serializer):
