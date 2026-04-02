@@ -9,7 +9,7 @@ load_dotenv()
 
 
  
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
@@ -123,6 +123,21 @@ CACHES = {
         }
     }
 }
+
+redis_host = os.getenv("REDIS_HOST", default="redis.data.svc.cluster.local")
+redis_port = os.getenv("REDIS_PORT", "6379")
+
+
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": f"redis://{redis_host}:{redis_port}/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         },
+#     }
+# }
+
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Cart Service API",
