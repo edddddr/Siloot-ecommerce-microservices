@@ -62,7 +62,7 @@ class LoginView(APIView):
 
         def post(self, request):
             
-            # with tracer.start_as_current_span("login-span"):
+           
             logger.info(
                 "Login attempt ",
                 extra={
@@ -74,7 +74,12 @@ class LoginView(APIView):
             try: 
                 serializer = LoginSerializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
-                return Response(serializer.validated_data)
+                logger.info(
+                    "User authenticated successfully", 
+                    extra={"email": request.data.get("email")}
+                    )
+                
+                return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
             except Exception as e:
                 logger.error("Login failed", extra={"error": str(e)})
