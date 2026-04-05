@@ -6,6 +6,9 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    from config.telemetry import setup_telemetry
+    setup_telemetry()
+    
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
     try:
         from django.core.management import execute_from_command_line

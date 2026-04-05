@@ -47,7 +47,9 @@ class ReserveStockView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+    
 
+    
 @extend_schema(
     summary="Confirm stock reservation",
     description="Finalizes stock deduction after successful payment."

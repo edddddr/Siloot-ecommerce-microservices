@@ -4,7 +4,7 @@ from pathlib import Path
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-print("__&&&&&&&&________Base Dir:",  BASE_DIR)
+
 
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -16,7 +16,6 @@ DEBUG = False
 allowed_hosts_str = os.getenv("ALLOWED_HOSTS", default="*")
 
 ALLOWED_HOSTS =  [host.strip() for host in allowed_hosts_str.split(",") if host]
-print(ALLOWED_HOSTS)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -27,10 +26,14 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
+    "django_prometheus",
+
+
     "users",
 ]
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -38,6 +41,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "config.middleware.request_id.RequestIDMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -71,7 +76,6 @@ DATABASES = {
     }
 }
 
-print("-------",env("POSTGRES_DB"))
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -135,16 +139,46 @@ CACHES = {
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+
+    "filters": {
+        "service_name": {
+            "()": "config.logging.filters.ServiceNameFilter",
+        },
+        "request_id": {
+            "()": "config.logging.filters.RequestIDFilter",
+        },
+
+        "trace_id": {
+        "()": "config.logging.filters.TraceIDFilter",
+        },
+    },
+
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": (
+                "%(asctime)s %(levelname)s %(name)s "
+                "%(service)s %(request_id)s %(message)s %(trace_id)s"
+            ),
+        },
+    },
+
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "json",
+            "filters": ["service_name", "request_id"],
         },
     },
-    "root": {
-        "handlers": ["console"],
-        "level": "INFO",
+
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
     },
 }
+
 
 AUTH_PASSWORD_VALIDATORS = []
 
@@ -165,3 +199,7 @@ AUTH_USER_MODEL = "users.User"
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+
+
+SERVICE_NAME = "auth-service"
+

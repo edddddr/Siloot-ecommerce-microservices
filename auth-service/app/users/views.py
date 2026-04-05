@@ -1,3 +1,4 @@
+import os
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,7 +8,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer, LoginSerializer
 from .tokens import InternalServiceToken
 from rest_framework.throttling import ScopedRateThrottle
-import os
+
+import logging
+from opentelemetry import trace
+
+logger = logging.getLogger(__name__)
+
+tracer = trace.get_tracer(__name__)
 
 
 class RegisterView(APIView):
@@ -21,15 +28,30 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
-    permission_classes = [AllowAny]
-    throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "login"
+    
+        permission_classes = [AllowAny]
+        throttle_classes = [ScopedRateThrottle]
+        throttle_scope = "login"
 
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data)
+        def post(self, request):
+            
+            with tracer.start_as_current_span("login-span"):
+                logger.info(
+                    "Login attempt ",
+                    extra={
+                            "ip": request.META.get("REMOTE_ADDR"),
+                            "user_agent": request.META.get("HTTP_USER_AGENT"),
+                        })
 
+
+            try: 
+                serializer = LoginSerializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                return Response(serializer.validated_data)
+
+            except Exception as e:
+                logger.error("Login failed", extra={"error": str(e)})
+                raise
 
 class LogoutView(APIView):
     def post(self, request):
