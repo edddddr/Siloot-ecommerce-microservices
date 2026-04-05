@@ -9,6 +9,10 @@ from .serializers import RegisterSerializer, LoginSerializer
 from .tokens import InternalServiceToken
 from rest_framework.throttling import ScopedRateThrottle
 
+from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
+from rest_framework import serializers
+
 import logging
 from opentelemetry import trace
 
@@ -19,6 +23,21 @@ tracer = trace.get_tracer(__name__)
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="User Registration",
+        request=RegisterSerializer,
+        responses={
+            201: inline_serializer(
+                name='RegisterSuccess',
+                fields={'message': serializers.CharField()}
+            ),
+            400: inline_serializer(
+                name='RegisterError',
+                fields={'email': serializers.ListField(child=serializers.CharField())}
+            )
+        }
+    )
 
     def post(self, request):
         logger.info(
@@ -55,37 +74,74 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+
     
-        permission_classes = [AllowAny]
-        throttle_classes = [ScopedRateThrottle]
-        throttle_scope = "login"
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
 
-        def post(self, request):
-            
-           
+    @extend_schema(
+        # 1. Define the REQUEST (Input)
+        request=LoginSerializer, 
+        # 2. Define the RESPONSE (Output)
+        responses={
+            200: inline_serializer(
+                name='LoginResponse',
+                fields={
+                    'access': serializers.CharField(),
+                    'refresh': serializers.CharField(),
+                }
+            ),
+            400: inline_serializer(
+                name='ValidationError',
+                fields={'error': serializers.CharField()}
+            )
+        }
+    )
+
+    def post(self, request):
+        
+        
+        logger.info(
+            "Login attempt ",
+            extra={
+                    "ip": request.META.get("REMOTE_ADDR"),
+                    "user_agent": request.META.get("HTTP_USER_AGENT"),
+                })
+
+
+        try: 
+            serializer = LoginSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
             logger.info(
-                "Login attempt ",
-                extra={
-                        "ip": request.META.get("REMOTE_ADDR"),
-                        "user_agent": request.META.get("HTTP_USER_AGENT"),
-                    })
+                "User authenticated successfully", 
+                extra={"email": request.data.get("email")}
+                )
+            
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-
-            try: 
-                serializer = LoginSerializer(data=request.data)
-                serializer.is_valid(raise_exception=True)
-                logger.info(
-                    "User authenticated successfully", 
-                    extra={"email": request.data.get("email")}
-                    )
-                
-                return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-            except Exception as e:
-                logger.error("Login failed", extra={"error": str(e)})
-                raise
+        except Exception as e:
+            logger.error("Login failed", extra={"error": str(e)})
+            raise
 
 class LogoutView(APIView):
+
+    @extend_schema(
+        summary="User Logout",
+        description="Blacklists the refresh token to terminate the session.",
+        request=inline_serializer(
+            name='LogoutRequest',
+            fields={'refresh': serializers.CharField()}
+        ),
+        responses={
+            205: None, # No content on success
+            400: inline_serializer(
+                name='LogoutError',
+                fields={'error': serializers.CharField()}
+            )
+        }
+    )
+
     def post(self, request):
 
         current_user_id = request.user.id if request.user.is_authenticated else "Anonymous"
@@ -127,6 +183,34 @@ class LogoutView(APIView):
 
 class InternalTokenView(APIView):
     permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="Internal Service Token Generation",
+        description="Generates a token for inter-service communication.",
+        parameters=[
+            OpenApiParameter(
+                name='X-Internal-Secret',
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                description="Shared secret for internal services",
+                required=True
+            )
+        ],
+        request=inline_serializer(
+            name='InternalTokenRequest',
+            fields={'service_name': serializers.CharField()}
+        ),
+        responses={
+            200: inline_serializer(
+                name='InternalTokenResponse',
+                fields={'access': serializers.CharField()}
+            ),
+            403: inline_serializer(
+                name='InternalAuthError',
+                fields={'error': serializers.CharField()}
+            )
+        }
+    )
 
     def post(self, request):
 

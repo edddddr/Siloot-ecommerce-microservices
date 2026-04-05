@@ -9,6 +9,5 @@ urlpatterns = [
 ]
 
 urlpatterns += [
-    path("internal/token/", InternalTokenView.as_view()),
-    path("health/", HealthCheckView.as_view()),
+    path("internal/token/", InternalTokenView.as_view())
 ]

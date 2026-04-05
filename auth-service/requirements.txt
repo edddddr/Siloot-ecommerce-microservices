@@ -8,6 +8,7 @@ django-environ
 django-redis
 coverage
 python-json-logger
+drf-spectacular 
 
 django-prometheus
 opentelemetry-api

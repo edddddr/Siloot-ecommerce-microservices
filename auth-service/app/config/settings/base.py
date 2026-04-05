@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "django_prometheus",
+    "drf_spectacular", 
 
 
     "users",
@@ -90,7 +91,15 @@ REST_FRAMEWORK = {
         "user": "100/minute",
         "login": "5/minute",
     },
+    # "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+
+REST_FRAMEWORK.update({
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+})
+
+
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
@@ -112,6 +121,31 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Auth Service API',
+    'DESCRIPTION': 'Microservice handling User Authentication and JWT Management',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # This ensures Swagger understands your JWT setup
+    'COMPONENT_SPLIT_PATCH': True,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SECURITY': [
+        {
+            'jwtAuth': [],
+        }
+    ],
+    'APPEND_COMPONENTS': {
+        "securitySchemes": {
+            "jwtAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+}
+
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -122,19 +156,6 @@ CACHES = {
     }
 }
 
-# redis_host = env("REDIS_HOST", default="redis.data.svc.cluster.local")
-# redis_port = os.getenv("REDIS_PORT", "6379")
-
-
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": f"redis://{redis_host}:{redis_port}/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         },
-#     }
-# }
 
 LOGGING = {
     "version": 1,
