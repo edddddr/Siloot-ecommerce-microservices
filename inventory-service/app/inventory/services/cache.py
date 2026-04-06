@@ -1,6 +1,6 @@
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404
-from .models import InventoryItem
+from inventory.models import InventoryItem
 
 
 CACHE_TTL = 60  # seconds

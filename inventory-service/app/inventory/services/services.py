@@ -2,9 +2,11 @@ import uuid
 from django.db import transaction
 from django.db.models import F
 
-from .models import InventoryItem, StockReservation
+from inventory.models import InventoryItem, StockReservation
 
 from .cache import InventoryCache
+
+from inventory.exceptions import InsufficientStockError
 
 
 class InventoryService:
@@ -20,7 +22,7 @@ class InventoryService:
         available_stock = inventory.total_stock - inventory.reserved_stock
 
         if available_stock < quantity:
-            raise ValueError("Insufficient stock")
+            raise InsufficientStockError()
 
         inventory.reserved_stock = F("reserved_stock") + quantity
         inventory.save()
