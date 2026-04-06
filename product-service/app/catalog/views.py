@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from .models import Category, Product
 from .serializers import CategorySerializer, ProductSerializer
 from .pagination import ProductCursorPagination
+import logging
 
 # Permission and Authentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -10,6 +11,8 @@ from .permissions import IsAdminUserRole
 # For cutsome Look up
 import uuid
 from django.shortcuts import get_object_or_404
+
+from rest_framework import viewsets, status, serializers
 
 # caching
 from django.core.cache import cache
@@ -22,6 +25,10 @@ from .services.cache import (
 )
 from .services.cache import invalidate_product_cache
 
+from drf_spectacular.utils import extend_schema, inline_serializer
+
+logger = logging.getLogger(__name__)
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -29,9 +36,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     pagination_class = ProductCursorPagination
 
     def get_object(self):
-        """
-        Custom lookup to support both UUID (pk) and Slug
-        """
+
+        logger.info("Category lookup initiated", extra={"lookup_value": lookup_value})
+       
         queryset = self.filter_queryset(self.get_queryset())
         
         # 'pk' is the default name for the variable in the URL
@@ -45,10 +52,24 @@ class CategoryViewSet(viewsets.ModelViewSet):
         except (ValueError, AttributeError):
             # 2. If not a UUID, treat it as a slug
             obj = get_object_or_404(queryset, slug=lookup_value)
+        
+        except Exception as e:
+            logger.error("Category lookup critical failure", extra={"error": str(e)})
+            raise
 
         self.check_object_permissions(self.request, obj)
         return obj
 
+    @extend_schema(
+            summary="Create Category (Admin Only)",
+            responses={
+                201: CategorySerializer,
+                400: inline_serializer(name="CategoryError", fields={"error": serializers.CharField()}),
+                403: inline_serializer(name="Forbidden", fields={"detail": serializers.CharField()})
+            }
+        )
+    
+    
     
 
     def get_permissions(self):
@@ -56,6 +77,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
             return [AllowAny()]        
         if self.action in ["create", "update", "partial_update", "destroy"]:
             return [IsAuthenticated(), IsAdminUserRole()]
+
+
 
 class ProductViewSet(viewsets.ModelViewSet):
 

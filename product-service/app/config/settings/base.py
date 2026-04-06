@@ -25,7 +25,8 @@ allowed_hosts_str = os.getenv("ALLOWED_HOSTS", "")
 
 ALLOWED_HOSTS =  [host.strip() for host in allowed_hosts_str.split(",") if host]
 
-
+print(ALLOWED_HOSTS)
+    
 # Application definition
 
 INSTALLED_APPS = [
@@ -122,19 +123,6 @@ CACHES = {
 
 
 
-# redis_host = env("REDIS_HOST", default="redis.data.svc.cluster.local")
-# redis_port = os.getenv("REDIS_PORT", "6379")
-
-
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": f"redis://{redis_host}:{redis_port}/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         },
-#     }
-# }
 
 SIMPLE_JWT = {
     "ALGORITHM": "RS256",
@@ -169,6 +157,51 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+
+    "filters": {
+        "service_name": {
+            "()": "config.logging.filters.ServiceNameFilter",
+        },
+        "request_id": {
+            "()": "config.logging.filters.RequestIDFilter",
+        },
+
+        # "trace_id": {
+        # "()": "config.logging.filters.TraceIDFilter",
+        # },
+    },
+
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": (
+                "%(asctime)s %(levelname)s %(name)s "
+                "%(service)s %(request_id)s %(message)s "
+            ),
+        },
+    },
+
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "filters": ["service_name", "request_id"],
+        },
+    },
+
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
@@ -190,3 +223,5 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SERVICE_NAME = "product-service"
