@@ -9,3 +9,10 @@ class ReserveStockSerializer(serializers.Serializer):
 
 class ReservationActionSerializer(serializers.Serializer):
     reservation_id = serializers.UUIDField()
+
+
+class ErrorResponseSerializer(serializers.Serializer):
+    error = serializers.CharField()
+
+class ReservationNotFoundErrorSerializer(serializers.Serializer):
+    error = serializers.CharField()

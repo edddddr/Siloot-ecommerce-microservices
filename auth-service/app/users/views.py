@@ -184,6 +184,8 @@ class LogoutView(APIView):
 class InternalTokenView(APIView):
     permission_classes = [AllowAny]
 
+    
+
     @extend_schema(
         summary="Internal Service Token Generation",
         description="Generates a token for inter-service communication.",
@@ -214,6 +216,8 @@ class InternalTokenView(APIView):
 
     def post(self, request):
 
+        service_name = request.data.get("service_name")
+
         logger.info(
             "Internal token request received",
             extra={
@@ -235,7 +239,6 @@ class InternalTokenView(APIView):
             )
             return Response({"error": "Unauthorized"}, status=403)
         
-        service_name = request.data.get("service_name")
 
         if not service_name:
             logger.error("Internal token request failed: missing service_name")

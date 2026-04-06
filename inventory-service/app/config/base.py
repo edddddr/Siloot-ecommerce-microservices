@@ -106,12 +106,35 @@ REST_FRAMEWORK = {
 
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Inventory Service API",
-    "DESCRIPTION": "Stock and reservation management service",
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,
-}
+    'TITLE': 'Inventory Service API',
+    'DESCRIPTION': 'Internal Inventory Management and Stock Reservation',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    
+    # 1. Define both Security Schemes here
+    'SECURITY': [
+        {'jwtAuth': []},
+        {'internalAuth': []}, 
+    ],
 
+    'APPEND_COMPONENTS': {
+        "securitySchemes": {
+            # Standard User Auth
+            "jwtAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            },
+            # 2. Internal Service Auth (The missing piece)
+            "internalAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-Internal-Secret",
+                "description": "Shared secret for Service-to-Service communication"
+            }
+        }
+    },
+}
 
 LOGGING = {
     "version": 1,

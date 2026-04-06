@@ -215,41 +215,153 @@ class ConfirmReservationView(APIView):
             )
 
 
-@extend_schema(
-    summary="Release stock reservation",
-    description="Releases reserved stock when payment fails or order is cancelled."
-)
+
+
 class ReleaseReservationView(APIView):
     authentication_classes = [InternalServiceAuthentication]
     permission_classes = [IsAuthenticated]    
 
+    @extend_schema(
+        summary="Release stock reservation",
+        description="Reverts a temporary reservation. Call this if payment fails or the user cancels their order.",
+        request=ReservationActionSerializer,
+        responses={
+            200: inline_serializer(
+                name="ReleaseSuccess",
+                fields={
+                    "reservation_id": serializers.UUIDField(),
+                    "status": serializers.CharField()
+                }
+            ),
+            400: inline_serializer(
+                name="ReleaseError",
+                fields={"error": serializers.CharField()}
+            ),
+            404: inline_serializer(
+                name="ReservationNotFound",
+                fields={"error": serializers.CharField()}
+            ),
+            500: inline_serializer(
+                name="InternalError",
+                fields={"error": serializers.CharField()}
+            )
+        }
+    )
+    
     def post(self, request):
 
-        serializer = ReservationActionSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        reservation = InventoryService.release_reservation(
-            serializer.validated_data["reservation_id"]
+        reservation_id = request.data.get("reservation_id")
+        
+        logger.info(
+            "Stock release attempt received", 
+            extra={"reservation_id": reservation_id}
         )
 
-        return Response(
-            {
-                "reservation_id": reservation.id,
-                "status": reservation.status
-            }
-        )
+        try:
+            serializer = ReservationActionSerializer(data=request.data)
+            if not serializer.is_valid():
+                    logger.warning(
+                        "Release validation failed", 
+                        extra={"reservation_id": reservation_id, "errors": serializer.errors}
+                    )
+                    return Response(
+                        {"error": "Invalid data", "details": serializer.errors},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                    
+
+            reservation = InventoryService.release_reservation(
+                serializer.validated_data["reservation_id"]
+            )
+
+            logger.info(
+                "Stock released back to inventory", 
+                extra={"reservation_id": reservation.id, "status": reservation.status}
+            )
+
+            return Response(
+                {
+                    "reservation_id": reservation.id,
+                    "status": reservation.status
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except ReservationIsProcessed as e:
+            # This can happen if a background task already cleaned up the expired reservation
+            logger.warning(
+                f"Release skipped: {str(e)} or handled", 
+                extra={"reservation_id": reservation_id}
+            )
+            return Response(
+                {"error": "Reservation not found or already released"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        except Exception as e:
+            logger.error(
+                "Critical failure during stock release", 
+                extra={"error": str(e), "reservation_id": reservation_id},
+                exc_info=True
+            )
+            return Response(
+                {"error": "Internal inventory service error"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+
 
 
 @extend_schema(
     summary="Get available stock",
-    description="Returns available stock for a product (cached with Redis)."
+    description="Returns available stock for a product. Optimized with Redis caching.",
+    responses={
+        200: inline_serializer(
+            name="StockResponse",
+            fields={
+                "product_id": serializers.UUIDField(),
+                "available_stock": serializers.IntegerField()
+            }
+        ),
+        404: inline_serializer(
+            name="ProductNotFound",
+            fields={"error": serializers.CharField()}
+        ),
+        500: inline_serializer(
+            name="InventoryError",
+            fields={"error": serializers.CharField()}
+        )
+    }
 )
 @api_view(["GET"])
 def get_stock(request, product_id):
 
-    stock = InventoryCache.get_stock(product_id)
+    try:
+        stock = InventoryCache.get_stock(product_id)
 
-    return Response({
-        "product_id": product_id,
-        "available_stock": stock
-    })
+        if stock is None:
+            logger.info("Stock cache MISS", extra={"product_id": product_id})
+            
+            return Response(
+                {"error": "Product stock information not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        logger.debug("Stock cache HIT", extra={"product_id": product_id})
+        
+        return Response({
+            "product_id": product_id,
+            "available_stock": stock
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.error(
+            "Error fetching stock levels", 
+            extra={"error": str(e), "product_id": product_id},
+            exc_info=True
+        )
+        return Response(
+            {"error": "Internal inventory service error"}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

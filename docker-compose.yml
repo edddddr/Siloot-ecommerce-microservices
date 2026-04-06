@@ -291,7 +291,7 @@ services:
         - promtail
         - loki
         - grafana
-        - prometheus
+        # - prometheus
       networks:
         - microservices-network
     

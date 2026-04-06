@@ -3,6 +3,8 @@ import jwt
 from django.conf import settings
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
+
 
 
 class InternalServiceUser:
@@ -53,3 +55,17 @@ class InternalServiceAuthentication(BaseAuthentication):
 
         # return authenticated service user
         return (InternalServiceUser(), payload)
+
+
+
+class InternalAuthScheme(OpenApiAuthenticationExtension):
+    target_class = 'inventory.authentication.InternalServiceAuthentication'  # Use the full import path
+    name = 'internalAuth'  # This MUST match the key in SPECTACULAR_SETTINGS
+
+    def get_security_definition(self, auto_schema):
+        return {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'X-Internal-Secret',
+            'description': 'Shared secret for Service-to-Service communication',
+        }

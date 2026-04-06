@@ -75,7 +75,7 @@ class InventoryService:
         )
 
         if reservation.status != StockReservation.STATUS_PENDING:
-            raise ValueError("Reservation already processed")
+            raise ReservationIsProcessed("Reservation already processed")
 
         inventory = InventoryItem.objects.select_for_update().get(
             product_id=reservation.product_id
