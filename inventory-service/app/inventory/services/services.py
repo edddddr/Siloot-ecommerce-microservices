@@ -6,7 +6,7 @@ from inventory.models import InventoryItem, StockReservation
 
 from .cache import InventoryCache
 
-from inventory.exceptions import InsufficientStockError
+from inventory.exceptions import InsufficientStockError, ReservationIsProcessed
 
 
 class InventoryService:
@@ -48,7 +48,7 @@ class InventoryService:
         )
 
         if reservation.status != StockReservation.STATUS_PENDING:
-            raise ValueError("Reservation already processed")
+            raise ReservationIsProcessed
 
         inventory = InventoryItem.objects.select_for_update().get(
             product_id=reservation.product_id

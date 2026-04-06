@@ -3,3 +3,10 @@ class InsufficientStockError(Exception):
     def __init__(self, message="Insufficient stock"):
         self.message = message
         super().__init__(self.message)
+
+
+class ReservationIsProcessed(Exception):
+    """Raised when a user tries to withdraw more than their balance."""
+    def __init__(self, message="Reservation already processed"):
+        self.message = message
+        super().__init__(self.message)

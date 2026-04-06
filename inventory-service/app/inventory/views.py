@@ -18,7 +18,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
 from .services.cache import InventoryCache
 
-from .exceptions import InsufficientStockError
+from .exceptions import InsufficientStockError, ReservationIsProcessed
 
 from drf_spectacular.utils import extend_schema, inline_serializer
 from drf_spectacular.utils import extend_schema
@@ -119,29 +119,100 @@ class ReserveStockView(APIView):
             )
 
     
-@extend_schema(
-    summary="Confirm stock reservation",
-    description="Finalizes stock deduction after successful payment."
-)
+
+
+
 class ConfirmReservationView(APIView):
     authentication_classes = [InternalServiceAuthentication]
     permission_classes = [IsAuthenticated]    
 
+
+    @extend_schema(
+        summary="Confirm stock reservation",
+        description="Finalizes the stock deduction. This should be called only after a successful payment signal.",
+        request=ReservationActionSerializer,
+        responses={
+            200: inline_serializer(
+                name="ConfirmationSuccess",
+                fields={
+                    "reservation_id": serializers.UUIDField(),
+                    "status": serializers.CharField()
+                }
+            ),
+            400: inline_serializer(
+                name="ConfirmationError",
+                fields={"error": serializers.CharField()}
+            ),
+            404: inline_serializer(
+                name="ReservationNotFound",
+                fields={"error": serializers.CharField()}
+            ),
+            500: inline_serializer(
+                name="InternalError",
+                fields={"error": serializers.CharField()}
+            )
+        }
+    )
+
+
     def post(self, request):
 
-        serializer = ReservationActionSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        reservation_id = request.data.get("reservation_id")
 
-        reservation = InventoryService.confirm_reservation(
-            serializer.validated_data["reservation_id"]
+        logger.info(
+            "Stock confirmation attempt", 
+            extra={"reservation_id": reservation_id}
         )
 
-        return Response(
-            {
-                "reservation_id": reservation.id,
-                "status": reservation.status
-            }
-        )
+        try:
+            serializer = ReservationActionSerializer(data=request.data)
+            if not serializer.is_valid():
+                logger.warning(
+                    "Confirmation validation failed", 
+                    extra={"reservation_id": reservation_id, "errors": serializer.errors}
+                )
+                return Response(
+                    {"error": "Invalid data provided", "details": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            reservation = InventoryService.confirm_reservation(
+                serializer.validated_data["reservation_id"]
+            )
+
+            logger.info(
+                "Stock confirmed and deducted successfully", 
+                extra={"reservation_id": reservation.id, "status": reservation.status}
+            )
+
+            return Response(
+                {
+                    "reservation_id": reservation.id,
+                    "status": reservation.status
+                }
+            )
+        
+        except ReservationIsProcessed as e: # Custom exception
+            logger.error(
+                f"Confirmation failed: {str(e)} or expired", 
+                extra={"reservation_id": reservation_id}
+            )
+            return Response(
+                {"error": "Reservation not found or already expired"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        except Exception as e:
+            # Critical error (e.g., DB lock during deduction)
+            logger.error(
+                "Critical error during reservation confirmation", 
+                extra={"error": str(e), "reservation_id": reservation_id},
+                exc_info=True
+            )
+            return Response(
+                {"error": "Internal server error during stock confirmation"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @extend_schema(
