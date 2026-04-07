@@ -1,6 +1,8 @@
 import requests
 from django.conf import settings
 
+from cart.exceptions import NotAvailebleInStokError
+
 
 class InventoryClient:
 
@@ -13,7 +15,7 @@ class InventoryClient:
         response = requests.get(url)
 
         if response.status_code != 200:
-            raise Exception("Inventory service unavailable")
+            raise NotAvailebleInStokError("Not enough stock available")
 
         data = response.json()
         

@@ -1,7 +1,7 @@
 import logging 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, serializers
 from drf_spectacular.utils import extend_schema
 
 
@@ -12,10 +12,14 @@ from .serializers import (
     UpdateItemSerializer,
 )
 
-from .services import CartService
+from cart.services.services import CartService
 
 
 from cart.cache import CartCache
+
+from .exceptions import ProductNotFoundError
+
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 
 logger = logging.getLogger(__name__)
@@ -84,10 +88,29 @@ class CartView(APIView):
 class AddItemView(APIView):
 
     @extend_schema(
-    description="Add Item to the cart.",
-    responses={200: AddItemSerializer},
-    auth=[{'BearerAuth': []}]
-    )   
+        summary="Add item to cart",
+        description="Validates stock and product details before adding an item to the user's cart.",
+        request=AddItemSerializer,
+        responses={
+            201: inline_serializer(
+                name="AddItemSuccess",
+                fields={"item_id": serializers.UUIDField(), "message": serializers.CharField()}
+            ),
+            400: inline_serializer(
+                name="ValidationError",
+                fields={"error": serializers.CharField()}
+            ),
+            404: inline_serializer(
+                name="ProductNotFound",
+                fields={"error": serializers.CharField()}
+            ),
+            503: inline_serializer(
+                name="ServiceUnavailable",
+                fields={"error": serializers.CharField()}
+            )
+        },
+        auth=[{'jwtAuth': []}] # Consistent with your spectacular settings
+    )
 
     def post(self, request):
         
@@ -99,6 +122,15 @@ class AddItemView(APIView):
         serializer = AddItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        product_id = serializer.validated_data["product_id"]
+        quantity = serializer.validated_data["quantity"]
+
+        logger.info("Add to cart request", extra={
+            "user_id": user_id, 
+            "product_id": product_id, 
+            "quantity": quantity
+        })
+
         try:
 
             item = CartService.add_item(
@@ -107,28 +139,61 @@ class AddItemView(APIView):
                 quantity=serializer.validated_data["quantity"],
             )
 
-            print(user_id, serializer.validated_data["product_id"], serializer.validated_data["quantity"])
+            CartCache.invalidate_cart(user_id)
+
+            return Response(
+                {
+                    "item_id": item.id,
+                    "message": "Item added to cart successfully."
+                },
+                status=status.HTTP_201_CREATED
+            )
+            
+        except ProductNotFoundError as e:
+            logger.warning("Add to cart failed: Product 404", extra={"product_id": product_id})
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
         except ValueError as e:
+            # This catches "Not enough stock" or business logic errors
+            logger.warning("Add to cart validation failed", extra={"error": str(e), "user_id": user_id})
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            # Catches S2S timeouts, connection errors, or DB failures
+            logger.error(
+                "Critical failure in Add to Cart View", 
+                extra={"error": str(e), "user_id": user_id}, 
+                exc_info=True
+            )
             return Response(
-                {"error": str(e)},
-                status=400
+                {"error": "Internal service communication error. Please try again later."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         
-        CartCache.invalidate_cart(user_id)
 
-        return Response(
-            {"item_id": item.id},
-            status=201
-        )
 
 
 class UpdateItemView(APIView):
 
     @extend_schema(
-    description="Update Item.",
-    responses={200: UpdateItemSerializer},
-    auth=[{'BearerAuth': []}]
+        summary="Update item quantity",
+        description="Updates the quantity of an item in the cart after re-verifying stock levels.",
+        request=UpdateItemSerializer,
+        responses={
+            200: inline_serializer(
+                name="UpdateSuccess",
+                fields={"item_id": serializers.UUIDField(), "status": serializers.CharField()}
+            ),
+            400: inline_serializer(
+                name="StockError",
+                fields={"error": serializers.CharField()}
+            ),
+            404: inline_serializer(
+                name="ItemNotFound",
+                fields={"error": serializers.CharField()}
+            )
+        },
+        auth=[{'jwtAuth': []}] 
     ) 
     
 
@@ -138,48 +203,128 @@ class UpdateItemView(APIView):
 
         serializer = UpdateItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        new_quantity = serializer.validated_data["quantity"]
+        
+        logger.info("Cart item update request", extra={
+            "user_id": user_id, 
+            "item_id": item_id, 
+            "new_quantity": new_quantity
+        })
 
-        item = CartService.update_item(
-            cart_item_id=item_id,
-            quantity=serializer.validated_data["quantity"],
-        )
+        try:
+            item = CartService.update_item(
+                cart_item_id=item_id,
+                quantity=new_quantity,
+            )
 
-        CartCache.invalidate_cart(user_id)
+            CartCache.invalidate_cart(user_id)
 
-        return Response({"item_id": item.id})
+
+            if item is None:
+                return Response(
+                    {"message": "Item removed from cart."}, 
+                    status=status.HTTP_200_OK
+                )
+
+            return Response(
+                {"item_id": item.id, "status": "updated"},
+                status=status.HTTP_200_OK
+            )
+
+        except ValueError as e:
+            # This catches "Insufficient stock" from the InventoryClient
+            logger.warning("Update failed: Stock conflict", extra={"error": str(e)})
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            # Catches 404s (item not found) or S2S communication failures
+            logger.error(
+                "Critical failure in Cart Patch View", 
+                extra={"error": str(e), "item_id": item_id}, 
+                exc_info=True
+            )
+            return Response(
+                {"error": "Could not update item. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class RemoveItemView(APIView):
     @extend_schema(
         summary="Remove item from cart",
-        description="Deletes a specific item from the user's cart using the item ID and invalidates the cache.",
-        responses={204: None},  # Explicitly states there is no response body
-        auth=[{'BearerAuth': []}]
+        description="Permanently deletes a specific item from the user's cart and invalidates the Redis cache.",
+        responses={
+            204: None,  # Standard for successful deletion
+            404: inline_serializer(
+                name="DeleteError",
+                fields={"error": serializers.CharField()}
+            )
+        },
+        auth=[{'jwtAuth': []}] # Consistent with your spectacular settings
     )
 
     def delete(self, request, item_id):
 
         user_id = request.user
 
-        CartService.remove_item(item_id)
-        CartCache.invalidate_cart(user_id)
+        logger.info("Cart item deletion requested", extra={
+            "user_id": user_id,
+            "cart_item_id": item_id
+        })
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            CartService.remove_item(item_id)
+            CartCache.invalidate_cart(user_id)
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            logger.error(
+                "Unexpected error during cart item deletion", 
+                extra={"error": str(e), "item_id": item_id},
+                exc_info=True
+            )
+            return Response(
+                {"error": "Could not remove item. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class ClearCartView(APIView):
     @extend_schema(
         summary="Clear entire cart",
-        description="Removes all items from the authenticated user's cart and invalidates the cache.",
-        responses={204: None},  # No content returned on success
-        auth=[{'BearerAuth': []}]
+        description="Removes all items from the authenticated user's cart and invalidates the Redis cache.",
+        responses={
+            204: None, # Standard REST response for successful bulk deletion
+            500: inline_serializer(
+                name="ClearError",
+                fields={"error": serializers.CharField()}
+            )
+        },
+        auth=[{'jwtAuth': []}] # Matching your established Swagger security scheme
     )
 
     def delete(self, request):
+        
+        user_id = request.user.id 
 
-        user_id = request.user
+        logger.info("Bulk cart clear requested", extra={"user_id": user_id})
 
-        CartService.clear_cart(user_id)
-        CartCache.invalidate_cart(user_id)
+        try:
+            
+            CartService.clear_cart(user_id)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+            CartCache.invalidate_cart(user_id)
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        except Exception as e:
+            logger.error(
+                "Critical failure during bulk cart clear", 
+                extra={"user_id": user_id, "error": str(e)},
+                exc_info=True
+            )
+            return Response(
+                {"error": "Failed to clear cart. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
