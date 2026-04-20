@@ -25,6 +25,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    "corsheaders",
+
+
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "django_prometheus",
@@ -35,6 +39,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -217,10 +222,20 @@ PASSWORD_HASHERS = [
 ]
 
 
+
 AUTH_USER_MODEL = "users.User"
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+
+
+# Allow your specific frontend origin
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+# If you are using cookies/session auth with CORS
+CORS_ALLOW_CREDENTIALS = True 
 
 
 SERVICE_NAME = "auth-service"

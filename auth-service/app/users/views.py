@@ -9,6 +9,8 @@ from .serializers import RegisterSerializer, LoginSerializer
 from .tokens import InternalServiceToken
 from rest_framework.throttling import ScopedRateThrottle
 
+from rest_framework_simplejwt.views import TokenRefreshView
+
 from drf_spectacular.utils import extend_schema, inline_serializer
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
 from rest_framework import serializers
@@ -180,6 +182,20 @@ class LogoutView(APIView):
             return Response({"error": "Invalid or already blacklisted token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class RefreshTokenView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        logger.info("Token refresh attempt")
+
+        response = super().post(request, *args, **kwargs)
+
+        if response.status_code == 200:
+            logger.info("Token refresh success")
+        else:
+            logger.warning("Token refresh failed")
+
+        return response
+
+        
 
 class InternalTokenView(APIView):
     permission_classes = [AllowAny]
