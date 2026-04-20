@@ -33,15 +33,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    "corsheaders",
+
     "rest_framework",
     "django_filters",
     "drf_spectacular",  
+    
 
 
     "catalog",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -221,5 +226,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Allow your specific frontend origin
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+# If you are using cookies/session auth with CORS
+CORS_ALLOW_CREDENTIALS = True 
+
 
 SERVICE_NAME = "product-service"
