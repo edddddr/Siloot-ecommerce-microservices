@@ -3,6 +3,7 @@ from .services import log_login_attempt
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User, UserRole
+from users.services import publish_user_created
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -18,8 +19,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         user = User.objects.create_user(password=password, **validated_data)
         
-
         user.save()
+
+        publish_user_created(user)
 
         return user
 

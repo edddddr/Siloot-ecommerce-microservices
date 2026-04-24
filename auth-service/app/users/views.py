@@ -13,6 +13,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from drf_spectacular.utils import extend_schema, inline_serializer
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
+
+
 from rest_framework import serializers
 
 import logging
@@ -60,6 +62,8 @@ class RegisterView(APIView):
                 "User registered successfully", 
                 extra={"email": request.data.get("email")}
             )
+
+            
 
             return Response({"message": "User registered"}, status=status.HTTP_201_CREATED)
 
