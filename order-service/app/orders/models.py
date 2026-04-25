@@ -87,6 +87,15 @@ class OrderStatusHistory(models.Model):
         db_table = "order_status_history"
 
 
+class UserSnapshot(models.Model):
+    id = models.UUIDField(primary_key=True)
+    email = models.EmailField()
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+
     
 class ProcessedEvent(models.Model):
     event_id = models.UUIDField(unique=True)
